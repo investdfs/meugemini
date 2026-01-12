@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Clone UI",
+  "description": "Uma interface de chat completa inspirada no Google Gemini, permitindo uso de chave API personalizada e seleção de modelos.",
+  "requestFramePermissions": []
+}
