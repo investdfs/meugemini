@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { MessageSquare, Plus, Trash2, Menu, X, Settings, Bot, Search as SearchIcon, Edit2 } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Menu, X, Settings, Bot, Search as SearchIcon, Edit2, Loader2 } from 'lucide-react';
 import { ChatSession, Agent } from '../types';
+import { FuturisticLogo } from './FuturisticLogo';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -15,7 +16,8 @@ interface SidebarProps {
   onOpenSettings: () => void;
   onOpenAgentModal: (agent?: Agent) => void;
   onDeleteAgent: (id: string, e: React.MouseEvent) => void;
-  aiDisplayName?: string; // Add optional aiDisplayName
+  aiDisplayName?: string;
+  isGenerating?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,7 +33,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettings,
   onOpenAgentModal,
   onDeleteAgent,
-  aiDisplayName = "Gemini"
+  aiDisplayName = "Gemini",
+  isGenerating = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -73,7 +76,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-20 md:hidden"
@@ -81,7 +83,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
       <div className={`
         fixed top-0 left-0 bottom-0 z-30
         w-[300px] bg-[#1e1f20] flex flex-col
@@ -90,7 +91,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         md:translate-x-0 md:relative md:w-[300px] md:flex-shrink-0
       `}>
         
-        {/* Header */}
         <div className="p-4 flex flex-col gap-4">
            <div className="flex items-center justify-between">
               <button 
@@ -99,13 +99,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <Menu size={20} />
               </button>
-              <div className="font-bold text-gray-200 tracking-tight flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                 {aiDisplayName} UI
+              <div className="flex items-center gap-3">
+                 <FuturisticLogo size={28} isProcessing={isGenerating} />
+                 <div className="font-bold text-gray-200 tracking-tight text-lg">
+                    {aiDisplayName} <span className="text-blue-400">UI</span>
+                 </div>
               </div>
            </div>
 
-           {/* Global Search Bar */}
            <div className="relative">
               <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input 
@@ -126,7 +127,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
            </div>
         </div>
 
-        {/* New Chat Button */}
         <div className="px-4 pb-2">
           <button
             onClick={onNewChat}
@@ -137,10 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-6 custom-scrollbar">
-          
-          {/* Agents Section */}
           <div className="space-y-1">
              <div className="px-3 py-1 flex items-center justify-between">
                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Agentes Customizados</span>
@@ -176,38 +173,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <span className="text-[10px] text-gray-500 truncate">{agent.description}</span>
                         </div>
                       </div>
-                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button
-                            onClick={(e) => { e.stopPropagation(); onOpenAgentModal(agent); }}
-                            className="p-1.5 text-gray-500 hover:text-blue-400 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                         <button
-                            onClick={(e) => onDeleteAgent(agent.id, e)}
-                            className="p-1.5 text-gray-500 hover:text-red-400 transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                      </div>
                    </div>
-                   {/* Fix: Explicitly cast agent.tags to string[] to resolve 'unknown' type errors during compilation */}
-                   {agent.tags && (agent.tags as string[]).length > 0 && (
-                     <div className="flex flex-wrap gap-1 mt-2">
-                        {(agent.tags as string[]).map((tag: string) => (
-                          <span key={tag} className="text-[9px] px-1.5 py-0.5 bg-black/30 rounded border border-gray-800 text-gray-500 uppercase font-bold">
-                            {tag}
-                          </span>
-                        ))}
-                     </div>
-                   )}
                 </div>
               ))}
           </div>
 
-          {/* Chronological Chat List */}
           <div className="space-y-4 pt-2">
             {Object.entries(groupedSessions).map(([groupName, groupSessions]) => {
               if (groupSessions.length === 0) return null;
@@ -215,7 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div key={groupName} className="space-y-1">
                   <div className="px-3 py-1 text-[10px] font-black text-gray-500 uppercase tracking-widest">{groupName}</div>
                   {groupSessions.map((session) => {
-                    const sessionAgent = agents.find(a => a.id === session.agentId);
+                    const isActive = currentSessionId === session.id;
                     return (
                       <div
                         key={session.id}
@@ -223,21 +193,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         className={`
                           group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer
                           transition-all text-sm
-                          ${currentSessionId === session.id 
+                          ${isActive 
                             ? 'bg-blue-600/10 text-blue-100 border-l-2 border-blue-500' 
                             : 'text-gray-400 hover:bg-[#282a2c] hover:text-white border-l-2 border-transparent'}
                         `}
                       >
                         <div className="flex items-center gap-3 overflow-hidden">
-                          {sessionAgent ? (
-                              <div 
-                                className="w-5 h-5 rounded flex items-center justify-center shrink-0 text-[10px]"
-                                style={{ backgroundColor: sessionAgent.themeColor, color: '#fff' }}
-                              >
-                                {sessionAgent.avatar && !sessionAgent.avatar.startsWith('data:image') ? sessionAgent.avatar : <Bot size={12} />}
-                              </div>
+                          {isActive && isGenerating ? (
+                            <Loader2 size={14} className="animate-spin text-blue-400" />
                           ) : (
-                              <MessageSquare size={16} className="flex-shrink-0 opacity-40" />
+                            <MessageSquare size={16} className="flex-shrink-0 opacity-40" />
                           )}
                           <span className="truncate font-medium">
                             {session.title || 'Nova conversa'}
@@ -246,11 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         
                         <button
                           onClick={(e) => onDeleteSession(session.id, e)}
-                          className={`
-                            p-1.5 rounded-lg text-gray-600 hover:text-red-400
-                            opacity-0 group-hover:opacity-100 transition-opacity
-                          `}
-                          title="Excluir"
+                          className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -260,17 +221,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               );
             })}
-            
-            {filteredSessions.length === 0 && searchQuery && (
-              <div className="px-3 py-8 text-center">
-                <SearchIcon size={24} className="mx-auto text-gray-700 mb-2 opacity-20" />
-                <p className="text-xs text-gray-600">Nenhuma conversa encontrada para "{searchQuery}"</p>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Bottom Actions */}
         <div className="p-4 border-t border-gray-800 bg-[#1e1f20]">
           <button
             onClick={onOpenSettings}

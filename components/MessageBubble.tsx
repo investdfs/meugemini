@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Bot, User, AlertCircle, FileText, Music, ThumbsUp, Check, Download, ExternalLink, Globe } from 'lucide-react';
+import { Bot, User, AlertCircle, FileText, Music, Check, Download, ExternalLink, Globe, Copy } from 'lucide-react';
 import { Message } from '../types';
 
 interface MessageBubbleProps {
@@ -16,6 +16,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
   const isUser = message.role === 'user';
   const isError = message.isError;
   const [isSaved, setIsSaved] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSave = () => {
     if (onSaveResponse) {
@@ -26,90 +33,105 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
   };
 
   return (
-    <div className={`flex w-full mb-8 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex max-w-4xl w-full gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex w-full mb-10 animate-message ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex max-w-[85%] sm:max-w-3xl w-full gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         
-        {/* Avatar */}
-        <div 
-          className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-1 overflow-hidden transition-colors duration-300 ${
-            isUser ? 'bg-gray-700 text-white' : isError ? 'bg-red-900/30 text-red-400' : 'text-white shadow-md'
-          }`}
-          style={{ backgroundColor: !isUser && !isError && themeColor ? themeColor : undefined }}
-        >
-          {isUser ? (
-            <User size={18} />
-          ) : isError ? (
-            <AlertCircle size={18} />
-          ) : (
-            avatar ? (
-              avatar.startsWith('data:image') ? (
-                <img src={avatar} alt="agent" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-lg">{avatar}</span>
-              )
-            ) : <Bot size={20} />
-          )}
+        {/* Avatar Area */}
+        <div className="flex flex-col items-center shrink-0">
+          <div 
+            className={`w-9 h-9 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-500 shadow-lg ${
+              isUser ? 'bg-gradient-to-br from-gray-700 to-gray-900 border border-gray-600' : 'text-white border border-white/10'
+            }`}
+            style={{ 
+              backgroundColor: !isUser && !isError && themeColor ? themeColor : undefined,
+              boxShadow: !isUser && !isError && themeColor ? `0 4px 15px ${themeColor}44` : undefined
+            }}
+          >
+            {isUser ? (
+              <User size={18} className="text-gray-300" />
+            ) : isError ? (
+              <AlertCircle size={18} className="text-red-400" />
+            ) : (
+              avatar ? (
+                avatar.startsWith('data:image') ? (
+                  <img src={avatar} alt="agent" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl">{avatar}</span>
+                )
+              ) : <Bot size={22} className="text-white" />
+            )}
+          </div>
         </div>
 
-        {/* Content */}
-        <div className={`flex-1 overflow-hidden ${isUser ? 'text-right' : 'text-left'}`}>
-          <div className={`inline-block text-base group relative ${isUser ? 'bg-[#282a2c] px-5 py-3 rounded-3xl rounded-tr-sm text-gray-100' : 'text-gray-100 w-full'}`}>
+        {/* Content Area */}
+        <div className={`flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
+          <div className={`
+            relative p-5 rounded-[22px] text-[15px] leading-relaxed transition-all duration-300 group
+            ${isUser 
+              ? 'bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-tr-none shadow-[0_8px_20px_rgba(139,92,246,0.3)]' 
+              : 'glass text-gray-200 rounded-tl-none border border-white/5'}
+          `}>
             
-            {/* Attachments Display */}
+            {/* Action Bar (Top Corner) */}
+            {!isUser && !isError && (
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={handleCopy}
+                  className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"
+                  title="Copiar resposta"
+                >
+                  {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                </button>
+              </div>
+            )}
+
+            {/* Attachments Section */}
             {message.attachments && message.attachments.length > 0 && (
-              <div className={`flex flex-wrap gap-2 mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                {message.attachments.map((att) => {
-                  if (att.mimeType.startsWith('image/')) {
-                    return (
+              <div className={`flex flex-wrap gap-2 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                {message.attachments.map((att) => (
+                  <div key={att.id} className="relative group/att">
+                    {att.mimeType.startsWith('image/') ? (
                       <img 
-                        key={att.id}
                         src={`data:${att.mimeType};base64,${att.data}`}
                         alt={att.fileName}
-                        className="max-w-[200px] max-h-[200px] rounded-lg border border-gray-700 object-cover"
+                        className="max-w-[240px] rounded-xl border border-white/10 shadow-lg transition-transform hover:scale-[1.02]"
                       />
-                    );
-                  } else if (att.mimeType.startsWith('audio/')) {
-                    return (
-                      <div key={att.id} className="bg-gray-800 p-2 rounded-lg flex items-center gap-2 border border-gray-700">
-                        <Music size={16} className="text-blue-400" />
-                        <audio controls src={`data:${att.mimeType};base64,${att.data}`} className="h-8 w-48" />
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div key={att.id} className="bg-gray-800 p-3 rounded-lg flex items-center gap-3 border border-gray-700 min-w-[150px]">
-                        <div className="bg-gray-700 p-2 rounded">
-                          <FileText size={20} className="text-gray-300" />
+                    ) : (
+                      <div className="bg-black/20 backdrop-blur-md p-3 rounded-xl flex items-center gap-3 border border-white/5 min-w-[160px]">
+                        <div className="bg-blue-500/20 p-2 rounded-lg">
+                          <FileText size={18} className="text-blue-400" />
                         </div>
                         <div className="flex flex-col overflow-hidden text-left">
-                           <span className="text-sm font-medium text-gray-200 truncate max-w-[120px]">{att.fileName}</span>
-                           <span className="text-[10px] text-gray-500 uppercase">{att.mimeType.split('/')[1]}</span>
+                           <span className="text-xs font-semibold text-gray-200 truncate">{att.fileName}</span>
+                           <span className="text-[10px] text-gray-500 uppercase tracking-tighter">{att.mimeType.split('/')[1]}</span>
                         </div>
                       </div>
-                    );
-                  }
-                })}
+                    )}
+                  </div>
+                ))}
               </div>
             )}
 
-            {isError ? (
-              <span className="text-red-400">{message.text}</span>
-            ) : (
-              <div className={`markdown-body ${isUser ? '' : 'w-full'} ${isTyping ? 'typing-cursor' : ''}`}>
-                 {isUser ? (
-                    <p className="whitespace-pre-wrap">{message.text}</p>
-                 ) : (
-                   <ReactMarkdown>{message.text}</ReactMarkdown>
-                 )}
-              </div>
-            )}
+            {/* Message Text */}
+            <div className={`markdown-body ${isTyping ? 'typing-cursor' : ''}`}>
+              {isError ? (
+                <div className="flex items-center gap-2 text-red-400 py-1">
+                   <AlertCircle size={16} />
+                   <span className="font-medium">{message.text}</span>
+                </div>
+              ) : isUser ? (
+                <p className="whitespace-pre-wrap font-medium">{message.text}</p>
+              ) : (
+                <ReactMarkdown>{message.text}</ReactMarkdown>
+              )}
+            </div>
 
-            {/* Grounding Sources */}
+            {/* Grounding / Sources */}
             {!isUser && message.sources && message.sources.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-800/50">
-                <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  <Globe size={14} />
-                  Fontes da Web
+              <div className="mt-5 pt-4 border-t border-white/5">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-3">
+                  <Globe size={12} className="text-blue-400" />
+                  Conhecimento Atualizado
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {message.sources.map((source, idx) => (
@@ -118,9 +140,9 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
                       href={source.uri}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#131314] hover:bg-[#1e1f20] border border-gray-800 rounded-full text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[11px] text-blue-400 transition-all hover:translate-y-[-1px]"
                     >
-                      <span className="truncate max-w-[150px]">{source.title}</span>
+                      <span className="truncate max-w-[140px] font-medium">{source.title}</span>
                       <ExternalLink size={10} />
                     </a>
                   ))}
@@ -128,20 +150,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
               </div>
             )}
 
-            {/* Agent Save Action */}
+            {/* Agent Approval Action */}
             {!isUser && !isError && isAgentContext && (
-                <div className="mt-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                     <button 
                         onClick={handleSave}
-                        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-green-400 bg-gray-800/50 px-2 py-1 rounded transition-colors"
-                        title="Aprovar e Salvar no Repositório (Drive)"
+                        className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition-all ${
+                          isSaved ? 'text-green-400 bg-green-400/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                        }`}
                     >
-                        {isSaved ? <Check size={14} className="text-green-400" /> : <Download size={14} />}
-                        {isSaved ? "Salvo" : "Salvar no Repositório"}
+                        {isSaved ? <Check size={14} /> : <Download size={14} />}
+                        {isSaved ? "Arquivo Gerado" : "Salvar no Drive"}
                     </button>
+                    <span className="text-[10px] text-gray-600 font-mono">ID-{message.id.slice(0,4)}</span>
                 </div>
             )}
           </div>
+          
+          {/* Timestamp */}
+          <span className={`text-[10px] text-gray-600 mt-1 font-medium tracking-tight ${isUser ? 'mr-2' : 'ml-2'}`}>
+            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
       </div>
     </div>
