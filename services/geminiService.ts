@@ -1,5 +1,6 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Provider, Attachment, MessageSource } from "../types";
+import { ENV } from "../config/env";
 
 export interface StreamResult {
   text: string;
@@ -8,21 +9,18 @@ export interface StreamResult {
 
 export class GeminiService {
   private googleAi: GoogleGenAI | null = null;
-  private googleKey: string = '';
-  private openRouterKey: string = '';
   private currentProvider: Provider = 'google';
 
-  constructor(googleKey: string, openRouterKey?: string, provider: Provider = 'google') {
-    this.updateConfig(googleKey, openRouterKey, provider);
+  constructor(provider: Provider = 'google') {
+    this.updateConfig(provider);
   }
 
-  updateConfig(googleKey: string, openRouterKey: string | undefined, provider: Provider) {
-    this.googleKey = googleKey;
-    this.openRouterKey = openRouterKey || '';
+  updateConfig(provider: Provider) {
     this.currentProvider = provider;
 
-    if (this.googleKey) {
-      this.googleAi = new GoogleGenAI({ apiKey: this.googleKey });
+    // Inicialização direta do SDK do Google usando process.env.API_KEY conforme regra de ouro
+    if (process.env.API_KEY) {
+      this.googleAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
     } else {
       this.googleAi = null;
     }
@@ -55,7 +53,7 @@ export class GeminiService {
     googleSearchEnabled: boolean = false
   ): AsyncGenerator<StreamResult, void, unknown> {
     if (!this.googleAi) {
-      throw new Error("Chave API do Google não configurada.");
+      throw new Error("API Key do Google não encontrada no ambiente (process.env.API_KEY).");
     }
 
     try {
@@ -92,7 +90,6 @@ export class GeminiService {
       for await (const chunk of resultStream) {
         const c = chunk as GenerateContentResponse;
         
-        // Extract grounding metadata if available
         const groundingMetadata = c.candidates?.[0]?.groundingMetadata;
         if (groundingMetadata?.groundingChunks) {
           const sources: MessageSource[] = groundingMetadata.groundingChunks
@@ -124,8 +121,9 @@ export class GeminiService {
     attachments: Attachment[],
     systemInstruction?: string
   ): AsyncGenerator<string, void, unknown> {
-    if (!this.openRouterKey) {
-      throw new Error("Chave API da OpenRouter não configurada.");
+    const orKey = ENV.OPENROUTER_API_KEY;
+    if (!orKey) {
+      throw new Error("Chave API da OpenRouter não encontrada no arquivo config/env.ts.");
     }
 
     const messages = [];
@@ -146,8 +144,6 @@ export class GeminiService {
                         url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`
                     }
                 });
-            } else {
-                contentParts.push({ type: "text", text: `[Arquivo anexado: ${part.inlineData.mimeType} - não suportado neste provedor]` });
             }
         }
       }
@@ -166,8 +162,6 @@ export class GeminiService {
                      url: `data:${att.mimeType};base64,${att.data}`
                  }
              });
-         } else {
-             currentContent.push({ type: "text", text: `[Arquivo enviado: ${att.fileName} (${att.mimeType})]` });
          }
     });
 
@@ -177,9 +171,7 @@ export class GeminiService {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${this.openRouterKey}`,
-          "HTTP-Referer": typeof window !== 'undefined' ? window.location.origin : "http://localhost:3000",
-          "X-Title": "Gemini Clone UI",
+          "Authorization": `Bearer ${orKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -194,13 +186,11 @@ export class GeminiService {
         throw new Error(err?.error?.message || `Erro OpenRouter: ${response.statusText}`);
       }
 
-      if (!response.body) throw new Error("Sem resposta do servidor");
-
-      const reader = response.body.getReader();
+      const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
-      while (true) {
+      while (reader) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -216,16 +206,12 @@ export class GeminiService {
             try {
               const json = JSON.parse(jsonStr);
               const content = json.choices[0]?.delta?.content;
-              if (content) {
-                yield content;
-              }
-            } catch (e) {
-            }
+              if (content) yield content;
+            } catch (e) {}
           }
         }
       }
     } catch (error: any) {
-      console.error("OpenRouter API Error:", error);
       throw new Error(error.message || "Erro ao comunicar com a OpenRouter.");
     }
   }
@@ -235,10 +221,10 @@ export class GeminiService {
       try {
         const response = await this.googleAi.models.generateContent({
           model: 'gemini-3-flash-preview',
-          contents: `Generate a very short title (max 4 words) in Portuguese for a chat that starts with this message: "${firstMessage}". Return ONLY the title text.`,
+          contents: `Crie um título curto (máx 4 palavras) para este chat: "${firstMessage}".`,
         });
         return response.text?.trim() || "Nova Conversa";
-      } catch (e) {
+      } catch {
         return "Nova Conversa";
       }
     }

@@ -43,8 +43,6 @@ export interface ChatSession {
 export type Provider = 'google' | 'openrouter';
 
 export interface AppSettings {
-  apiKey: string; // Google Key
-  openRouterApiKey?: string; // OpenRouter Key
   provider: Provider;
   modelId: string;
   systemInstruction?: string;
