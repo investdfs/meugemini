@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { MessageSquare, Plus, Trash2, Menu, X, Settings, Bot, Search as SearchIcon, Edit2, Loader2 } from 'lucide-react';
 import { ChatSession, Agent } from '../types';
@@ -5,7 +6,7 @@ import { FuturisticLogo } from './FuturisticLogo';
 
 interface SidebarProps {
   isOpen: boolean;
-  toggleSidebar: () => void;
+  toggleSidebar: void;
   sessions: ChatSession[];
   agents: Agent[];
   currentSessionId: string | null;
@@ -150,7 +151,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
              </div>
              
-             {agents.length > 0 && agents.map((agent: Agent) => (
+             {/* Use type assertion to ensure 'agents' is correctly handled as an array of Agent */}
+             {(agents as Agent[]).length > 0 && (agents as Agent[]).map((agent: Agent) => (
                 <div 
                   key={agent.id}
                   onClick={() => onNewAgentChat(agent.id)}

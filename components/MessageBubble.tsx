@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Bot, User, AlertCircle, FileText, Music, Check, Download, ExternalLink, Globe, Copy } from 'lucide-react';
+import { Bot, User, AlertCircle, FileText, Check, Copy, Globe, ExternalLink } from 'lucide-react';
 import { Message } from '../types';
 
 interface MessageBubbleProps {
@@ -15,7 +15,6 @@ interface MessageBubbleProps {
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentContext, onSaveResponse, isTyping, themeColor, avatar }) => {
   const isUser = message.role === 'user';
   const isError = message.isError;
-  const [isSaved, setIsSaved] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -24,86 +23,76 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSave = () => {
-    if (onSaveResponse) {
-        onSaveResponse(message.text);
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2000);
-    }
-  };
-
   return (
-    <div className={`flex w-full mb-10 animate-message ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex max-w-[85%] sm:max-w-3xl w-full gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex w-full mb-4 animate-message ${isUser ? 'justify-end' : 'justify-start'}`}>
+      <div className={`flex max-w-[92%] sm:max-w-2xl w-full gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         
         {/* Avatar Area */}
         <div className="flex flex-col items-center shrink-0">
           <div 
-            className={`w-9 h-9 rounded-2xl flex items-center justify-center overflow-hidden transition-all duration-500 shadow-lg ${
-              isUser ? 'bg-gradient-to-br from-gray-700 to-gray-900 border border-gray-600' : 'text-white border border-white/10'
+            className={`w-8 h-8 rounded-xl flex items-center justify-center overflow-hidden transition-all duration-500 shadow-sm ${
+              isUser ? 'bg-gray-800 border border-gray-700' : 'text-white border border-white/10'
             }`}
             style={{ 
               backgroundColor: !isUser && !isError && themeColor ? themeColor : undefined,
-              boxShadow: !isUser && !isError && themeColor ? `0 4px 15px ${themeColor}44` : undefined
             }}
           >
             {isUser ? (
-              <User size={18} className="text-gray-300" />
+              <User size={14} className="text-gray-400" />
             ) : isError ? (
-              <AlertCircle size={18} className="text-red-400" />
+              <AlertCircle size={14} className="text-red-400" />
             ) : (
               avatar ? (
                 avatar.startsWith('data:image') ? (
                   <img src={avatar} alt="agent" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xl">{avatar}</span>
+                  <span className="text-sm">{avatar}</span>
                 )
-              ) : <Bot size={22} className="text-white" />
+              ) : <Bot size={16} className="text-white" />
             )}
           </div>
         </div>
 
         {/* Content Area */}
-        <div className={`flex flex-col gap-1.5 ${isUser ? 'items-end' : 'items-start'}`}>
+        <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
           <div className={`
-            relative p-5 rounded-[22px] text-[15px] leading-relaxed transition-all duration-300 group
+            relative px-4 py-2.5 rounded-2xl text-sm leading-snug transition-all duration-200 group
             ${isUser 
-              ? 'bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-tr-none shadow-[0_8px_20px_rgba(139,92,246,0.3)]' 
-              : 'glass text-gray-200 rounded-tl-none border border-white/5'}
+              ? 'bg-blue-600 text-white rounded-tr-none shadow-sm' 
+              : 'glass text-gray-300 rounded-tl-none border border-white/5'}
           `}>
             
             {/* Action Bar (Top Corner) */}
             {!isUser && !isError && (
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={handleCopy}
-                  className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 transition-colors"
-                  title="Copiar resposta"
+                  className="p-1 hover:bg-white/10 rounded-md text-gray-500 transition-colors"
                 >
-                  {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                  {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
                 </button>
               </div>
             )}
 
             {/* Attachments Section */}
             {message.attachments && message.attachments.length > 0 && (
-              <div className={`flex flex-wrap gap-2 mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex flex-wrap gap-2 mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
                 {message.attachments.map((att) => (
                   <div key={att.id} className="relative group/att">
                     {att.mimeType.startsWith('image/') ? (
                       <img 
                         src={`data:${att.mimeType};base64,${att.data}`}
                         alt={att.fileName}
-                        className="max-w-[240px] rounded-xl border border-white/10 shadow-lg transition-transform hover:scale-[1.02]"
+                        className="max-w-[180px] rounded-lg border border-white/10 shadow-sm"
                       />
                     ) : (
-                      <div className="bg-black/20 backdrop-blur-md p-3 rounded-xl flex items-center gap-3 border border-white/5 min-w-[160px]">
-                        <div className="bg-blue-500/20 p-2 rounded-lg">
-                          <FileText size={18} className="text-blue-400" />
+                      <div className="bg-black/20 backdrop-blur-md p-2 rounded-lg flex items-center gap-2 border border-white/5 min-w-[140px]">
+                        <div className="bg-blue-500/20 p-1.5 rounded-md text-blue-400">
+                          <FileText size={14} />
                         </div>
                         <div className="flex flex-col overflow-hidden text-left">
-                           <span className="text-xs font-semibold text-gray-200 truncate">{att.fileName}</span>
-                           <span className="text-[10px] text-gray-500 uppercase tracking-tighter">{att.mimeType.split('/')[1]}</span>
+                           <span className="text-[11px] font-bold text-gray-300 truncate">{att.fileName}</span>
+                           <span className="text-[9px] text-gray-500 uppercase">{att.mimeType.split('/')[1]}</span>
                         </div>
                       </div>
                     )}
@@ -115,12 +104,12 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
             {/* Message Text */}
             <div className={`markdown-body ${isTyping ? 'typing-cursor' : ''}`}>
               {isError ? (
-                <div className="flex items-center gap-2 text-red-400 py-1">
-                   <AlertCircle size={16} />
-                   <span className="font-medium">{message.text}</span>
+                <div className="flex items-center gap-2 text-red-400 py-0.5">
+                   <AlertCircle size={14} />
+                   <span className="text-xs">{message.text}</span>
                 </div>
               ) : isUser ? (
-                <p className="whitespace-pre-wrap font-medium">{message.text}</p>
+                <p className="whitespace-pre-wrap">{message.text}</p>
               ) : (
                 <ReactMarkdown>{message.text}</ReactMarkdown>
               )}
@@ -128,47 +117,27 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
 
             {/* Grounding / Sources */}
             {!isUser && message.sources && message.sources.length > 0 && (
-              <div className="mt-5 pt-4 border-t border-white/5">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-3">
-                  <Globe size={12} className="text-blue-400" />
-                  Conhecimento Atualizado
+              <div className="mt-3 pt-2 border-t border-white/5">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-500 uppercase mb-2">
+                  <Globe size={10} className="text-blue-500" /> Fontes Web
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {message.sources.map((source, idx) => (
                     <a 
-                      key={idx}
-                      href={source.uri}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-[11px] text-blue-400 transition-all hover:translate-y-[-1px]"
+                      key={idx} href={source.uri} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[10px] text-blue-400 transition-all"
                     >
-                      <span className="truncate max-w-[140px] font-medium">{source.title}</span>
-                      <ExternalLink size={10} />
+                      <span className="truncate max-w-[120px]">{source.title}</span>
+                      <ExternalLink size={8} />
                     </a>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Agent Approval Action */}
-            {!isUser && !isError && isAgentContext && (
-                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                    <button 
-                        onClick={handleSave}
-                        className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition-all ${
-                          isSaved ? 'text-green-400 bg-green-400/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
-                        }`}
-                    >
-                        {isSaved ? <Check size={14} /> : <Download size={14} />}
-                        {isSaved ? "Arquivo Gerado" : "Salvar no Drive"}
-                    </button>
-                    <span className="text-[10px] text-gray-600 font-mono">ID-{message.id.slice(0,4)}</span>
-                </div>
-            )}
           </div>
           
           {/* Timestamp */}
-          <span className={`text-[10px] text-gray-600 mt-1 font-medium tracking-tight ${isUser ? 'mr-2' : 'ml-2'}`}>
+          <span className={`text-[9px] text-gray-600 mt-0.5 font-medium ${isUser ? 'mr-1' : 'ml-1'}`}>
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>

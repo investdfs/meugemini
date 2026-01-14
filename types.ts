@@ -45,6 +45,7 @@ export type Provider = 'google' | 'openrouter';
 export interface AppSettings {
   provider: Provider;
   modelId: string;
+  customModelId?: string;
   systemInstruction?: string;
   googleSearchEnabled: boolean;
   aiDisplayName: string; // Customizable AI Name

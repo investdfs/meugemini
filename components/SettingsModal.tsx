@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { X, Key, Globe, Cpu, User, CheckCircle, Info, ExternalLink, Terminal, ShieldCheck } from 'lucide-react';
+import { X, Globe, Cpu, User, Settings2, Info, MessageSquare, Search, Zap, ToggleLeft, ToggleRight } from 'lucide-react';
 import { AppSettings, Provider } from '../types';
 import { AVAILABLE_MODELS } from '../constants';
-import { ENV } from '../config/env';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -22,75 +21,57 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
 
   if (!isOpen) return null;
 
-  // No modelo de Proxy, o browser não vê a chave. 
-  // Assumimos que está configurado se estiver na Vercel ou se o usuário estiver testando.
-  const isVercel = ENV.IS_VERCEL;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg bg-[#1e1f20] rounded-2xl border border-gray-700 overflow-hidden flex flex-col max-h-[95vh] animate-message">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-[#282a2c]">
-          <h2 className="text-xl font-semibold text-white">Configurações</h2>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white rounded-full transition-colors"><X size={20} /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+      <div className="w-full max-w-2xl bg-[#1e1f20] rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] animate-message">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-[#282a2c]">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 rounded-2xl bg-blue-600/20 text-blue-400">
+              <Settings2 size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white tracking-tight">Painel de Controle</h2>
+              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">Configuração Avançada da Engine</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/5 transition-all">
+            <X size={22} />
+          </button>
         </div>
         
-        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-          {/* Status da Conexão Seguro */}
-          <div className={`p-4 rounded-xl border flex items-center gap-4 ${isVercel ? 'bg-blue-900/10 border-blue-900/30 text-blue-400' : 'bg-amber-900/10 border-amber-900/30 text-amber-400'}`}>
-            <div className={`p-2 rounded-lg ${isVercel ? 'bg-blue-500/20' : 'bg-amber-500/20'}`}>
-              <ShieldCheck size={24} />
-            </div>
-            <div className="flex flex-col flex-1">
-              <span className="text-sm font-bold">{isVercel ? 'Segurança de Proxy Ativa' : 'Modo de Desenvolvimento'}</span>
-              <span className="text-[10px] opacity-70 uppercase tracking-widest">As chaves são processadas no servidor</span>
-            </div>
-          </div>
-
-          <div className="p-5 bg-blue-900/10 border border-blue-800/50 rounded-xl space-y-3">
-            <div className="flex items-center gap-2 text-blue-400 font-bold text-xs uppercase tracking-tighter">
-              <Terminal size={14} /> Verificação de Chaves (Vercel)
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              O erro 401 no console indica que você precisa adicionar as <b>Environment Variables</b> no painel da Vercel e desativar a "Deployment Protection" se quiser acesso público.
-            </p>
-            <div className="bg-[#131314] p-3 rounded-lg border border-gray-800 font-mono text-[10px] space-y-2">
-              <div className="flex justify-between text-blue-400">
-                <span>API_KEY</span>
-                <span className="text-gray-500">Configurada na Vercel</span>
-              </div>
-            </div>
-            <a 
-              href="https://vercel.com/dashboard" 
-              target="_blank" 
-              className="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all"
-            >
-              Abrir Dashboard Vercel <ExternalLink size={12} />
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+          
+          {/* Sessão: Identidade */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-300 flex items-center gap-2"><User size={16} /> Nome da IA</label>
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <User size={14} /> Identidade da IA
+              </label>
               <input 
                 type="text" 
+                placeholder="Ex: Gemini, Jarvis, Assistente..."
                 value={localSettings.aiDisplayName} 
                 onChange={e => setLocalSettings({...localSettings, aiDisplayName: e.target.value})} 
-                className="w-full bg-[#282a2c] text-white px-4 py-3 rounded-lg border border-gray-600 outline-none focus:border-blue-500 transition-all" 
+                className="w-full bg-[#131314] text-white px-5 py-3.5 rounded-2xl border border-white/5 focus:border-blue-500/50 outline-none transition-all shadow-inner" 
               />
             </div>
 
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-300 flex items-center gap-2"><Globe size={16} /> Provedor</label>
-              <div className="grid grid-cols-2 gap-2 bg-[#282a2c] p-1 rounded-lg border border-gray-700">
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <Globe size={14} /> Provedor de API
+              </label>
+              <div className="grid grid-cols-2 gap-2 bg-[#131314] p-1.5 rounded-2xl border border-white/5 shadow-inner">
                 <button 
                   onClick={() => setLocalSettings({...localSettings, provider: 'google'})} 
-                  className={`py-2 px-3 rounded-md text-xs font-bold transition-all ${localSettings.provider === 'google' ? 'bg-blue-600 text-white' : 'text-gray-400'}`}
+                  className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${localSettings.provider === 'google' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                 >
                   GOOGLE
                 </button>
                 <button 
                   onClick={() => setLocalSettings({...localSettings, provider: 'openrouter'})} 
-                  className={`py-2 px-3 rounded-md text-xs font-bold transition-all ${localSettings.provider === 'openrouter' ? 'bg-purple-600 text-white' : 'text-gray-400'}`}
+                  className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${localSettings.provider === 'openrouter' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                 >
                   OPENROUTER
                 </button>
@@ -98,28 +79,85 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             </div>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-gray-300 flex items-center gap-2"><Cpu size={16} /> Modelo</label>
-            <div className="grid grid-cols-1 gap-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
-              {AVAILABLE_MODELS.filter(m => m.provider === localSettings.provider).map(m => (
-                <div 
-                  key={m.id} 
-                  onClick={() => setLocalSettings({...localSettings, modelId: m.id})} 
-                  className={`cursor-pointer p-3 rounded-xl border transition-all ${localSettings.modelId === m.id ? 'border-blue-500 bg-blue-900/10' : 'border-gray-700 bg-[#282a2c] hover:border-gray-600'}`}
+          {/* Sessão: Comportamento */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <MessageSquare size={14} /> Instruções do Sistema (System Prompt)
+              </label>
+              <span className="text-[10px] text-blue-500 font-bold bg-blue-500/10 px-2 py-0.5 rounded">MODO EXPERT</span>
+            </div>
+            <textarea 
+              value={localSettings.systemInstruction} 
+              onChange={e => setLocalSettings({...localSettings, systemInstruction: e.target.value})} 
+              placeholder="Defina o comportamento base da IA, personalidade e restrições..."
+              className="w-full bg-[#131314] text-white px-5 py-4 rounded-2xl border border-white/5 focus:border-blue-500/50 outline-none transition-all min-h-[120px] text-sm leading-relaxed custom-scrollbar shadow-inner"
+            />
+          </div>
+
+          {/* Sessão: Modelo e Ferramentas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <Cpu size={14} /> Seleção de Modelo
+              </label>
+              <div className="space-y-2">
+                <select 
+                  value={localSettings.modelId} 
+                  onChange={e => setLocalSettings({...localSettings, modelId: e.target.value})}
+                  className="w-full bg-[#131314] text-white px-5 py-3.5 rounded-2xl border border-white/5 focus:border-blue-500/50 outline-none transition-all appearance-none cursor-pointer text-sm"
                 >
-                  <span className="block font-bold text-gray-100 text-xs">{m.name}</span>
+                  {AVAILABLE_MODELS.filter(m => m.provider === localSettings.provider).map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                  <option value="custom">-- Modelo Personalizado --</option>
+                </select>
+                
+                {localSettings.modelId === 'custom' && (
+                  <input 
+                    type="text"
+                    placeholder="ID do Modelo (ex: gemini-1.5-pro)"
+                    value={localSettings.customModelId || ''}
+                    onChange={e => setLocalSettings({...localSettings, customModelId: e.target.value})}
+                    className="w-full bg-[#131314] text-xs text-blue-400 px-5 py-3 rounded-xl border border-blue-500/20 outline-none animate-message"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <Search size={14} /> Funcionalidades
+              </label>
+              <div 
+                onClick={() => setLocalSettings({...localSettings, googleSearchEnabled: !localSettings.googleSearchEnabled})}
+                className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between group ${localSettings.googleSearchEnabled ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/5 bg-[#131314] opacity-60'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${localSettings.googleSearchEnabled ? 'bg-blue-500 text-white' : 'bg-gray-800 text-gray-500'}`}>
+                    <Search size={16} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-200">Google Search Grounding</span>
+                    <span className="text-[10px] text-gray-500">Dados da web em tempo real</span>
+                  </div>
                 </div>
-              ))}
+                {localSettings.googleSearchEnabled ? <ToggleRight className="text-blue-500" size={28} /> : <ToggleLeft className="text-gray-600" size={28} />}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-[#282a2c] flex justify-end border-t border-gray-700">
+        {/* Footer */}
+        <div className="px-8 py-6 bg-[#282a2c] flex items-center justify-between border-t border-white/5">
+           <div className="flex items-center gap-2 text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">
+              <Zap size={14} className="text-yellow-500" /> Auto-Save Ativo
+           </div>
            <button 
             onClick={() => { onSave(localSettings); onClose(); }} 
-            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full shadow-lg transition-all text-sm"
+            className="px-10 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-[0_10px_20px_rgba(37,99,235,0.3)] transition-all active:scale-95 text-sm"
            >
-             Aplicar
+             Salvar Configurações
            </button>
         </div>
       </div>
