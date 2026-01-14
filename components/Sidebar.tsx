@@ -150,7 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
              </div>
              
-             {Array.isArray(agents) && agents.length > 0 && agents.map((agent) => (
+             {agents && agents.length > 0 && agents.map((agent) => (
                 <div 
                   key={agent.id}
                   onClick={() => onNewAgentChat(agent.id)}
@@ -180,11 +180,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <div className="space-y-4 pt-2">
             {Object.entries(groupedSessions).map(([groupName, groupSessions]) => {
-              if (groupSessions.length === 0) return null;
+              const sessions = groupSessions as ChatSession[];
+              if (sessions.length === 0) return null;
               return (
                 <div key={groupName} className="space-y-1">
                   <div className="px-3 py-1 text-[10px] font-black text-gray-500 uppercase tracking-widest">{groupName}</div>
-                  {groupSessions.map((session) => {
+                  {sessions.map((session) => {
                     const isActive = currentSessionId === session.id;
                     return (
                       <div

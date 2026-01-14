@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { X, Globe, Cpu, User, Settings2, Info, MessageSquare, Search, Zap, ToggleLeft, ToggleRight, Key } from 'lucide-react';
+import { X, Globe, Cpu, User, Settings2, Info, MessageSquare, Search, Zap, ToggleLeft, ToggleRight, Key, Box } from 'lucide-react';
 import { AppSettings, Provider } from '../types';
 import { AVAILABLE_MODELS } from '../constants';
 
@@ -44,59 +44,65 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
         
         <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
           
-          {/* SESSÃO CRÍTICA: API KEY */}
-          <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl space-y-3">
-             <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-bold text-sm uppercase tracking-wider">
-               <Key size={16} /> Credenciais de Acesso
-             </div>
-             <p className="text-xs text-gray-600 dark:text-gray-400">
-               Insira sua chave API abaixo. Ela será salva no seu navegador e nunca enviada para nossos servidores.
-               <br/>
-               <span className="font-bold">Atenção:</span> Se você recebeu erro 403, sua chave antiga vazou. Gere uma nova.
-             </p>
-             <input 
-                type="password" 
-                placeholder="Cole sua GOOGLE_API_KEY aqui..."
-                value={localSettings.apiKey || ''} 
-                onChange={e => setLocalSettings({...localSettings, apiKey: e.target.value})} 
-                className="w-full bg-white dark:bg-[#131314] text-gray-900 dark:text-white px-5 py-3 rounded-xl border border-gray-300 dark:border-white/10 focus:border-red-500 outline-none transition-all font-mono text-xs shadow-inner" 
-              />
+          {/* SESSÃO: PROVEDOR & CHAVES */}
+          <div className="space-y-4">
+            <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+               <Globe size={14} /> Seleção de Provedor
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Opção Google */}
+              <div 
+                onClick={() => setLocalSettings({...localSettings, provider: 'google'})}
+                className={`cursor-pointer rounded-2xl p-4 border transition-all ${localSettings.provider === 'google' ? 'bg-blue-50 dark:bg-blue-600/10 border-blue-500 ring-1 ring-blue-500' : 'bg-gray-50 dark:bg-[#131314] border-transparent opacity-60'}`}
+              >
+                 <div className="flex items-center gap-2 mb-2 font-bold text-sm text-gray-800 dark:text-white">
+                    <Box size={16} className="text-blue-500" /> Google AI (Gemini)
+                 </div>
+                 <input 
+                    type="password" 
+                    placeholder="Cole sua GOOGLE_API_KEY..."
+                    value={localSettings.googleApiKey || ''} 
+                    onChange={e => setLocalSettings({...localSettings, googleApiKey: e.target.value})} 
+                    className="w-full bg-white dark:bg-[#1e1f20] text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-mono outline-none focus:border-blue-500"
+                    onClick={(e) => e.stopPropagation()}
+                 />
+              </div>
+
+              {/* Opção OpenRouter */}
+              <div 
+                onClick={() => setLocalSettings({...localSettings, provider: 'openrouter'})}
+                className={`cursor-pointer rounded-2xl p-4 border transition-all ${localSettings.provider === 'openrouter' ? 'bg-purple-50 dark:bg-purple-600/10 border-purple-500 ring-1 ring-purple-500' : 'bg-gray-50 dark:bg-[#131314] border-transparent opacity-60'}`}
+              >
+                 <div className="flex items-center gap-2 mb-2 font-bold text-sm text-gray-800 dark:text-white">
+                    <Cpu size={16} className="text-purple-500" /> OpenRouter
+                 </div>
+                 <input 
+                    type="password" 
+                    placeholder="Cole sua OPENROUTER_KEY..."
+                    value={localSettings.openRouterApiKey || ''} 
+                    onChange={e => setLocalSettings({...localSettings, openRouterApiKey: e.target.value})} 
+                    className="w-full bg-white dark:bg-[#1e1f20] text-gray-900 dark:text-white px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-mono outline-none focus:border-purple-500"
+                    onClick={(e) => e.stopPropagation()}
+                 />
+              </div>
+            </div>
+            <p className="text-[10px] text-gray-500 px-1">
+              * Suas chaves são salvas apenas no seu navegador.
+            </p>
           </div>
 
           {/* Sessão: Identidade */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-3">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                <User size={14} /> Identidade da IA
-              </label>
-              <input 
-                type="text" 
-                placeholder="Ex: Gemini, Jarvis, Assistente..."
-                value={localSettings.aiDisplayName} 
-                onChange={e => setLocalSettings({...localSettings, aiDisplayName: e.target.value})} 
-                className="w-full bg-gray-100 dark:bg-[#131314] text-gray-900 dark:text-white px-5 py-3.5 rounded-2xl border border-transparent focus:border-blue-500/50 outline-none transition-all shadow-inner" 
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                <Globe size={14} /> Provedor de API
-              </label>
-              <div className="grid grid-cols-2 gap-2 bg-gray-100 dark:bg-[#131314] p-1.5 rounded-2xl border border-transparent dark:border-white/5 shadow-inner">
-                <button 
-                  onClick={() => setLocalSettings({...localSettings, provider: 'google'})} 
-                  className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${localSettings.provider === 'google' ? 'bg-white dark:bg-blue-600 text-black dark:text-white shadow-md' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                >
-                  GOOGLE
-                </button>
-                <button 
-                  onClick={() => setLocalSettings({...localSettings, provider: 'openrouter'})} 
-                  className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${localSettings.provider === 'openrouter' ? 'bg-white dark:bg-purple-600 text-black dark:text-white shadow-md' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                >
-                  OPENROUTER
-                </button>
-              </div>
-            </div>
+          <div className="space-y-3">
+            <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+              <User size={14} /> Identidade da IA
+            </label>
+            <input 
+              type="text" 
+              placeholder="Ex: Gemini, Jarvis, Assistente..."
+              value={localSettings.aiDisplayName} 
+              onChange={e => setLocalSettings({...localSettings, aiDisplayName: e.target.value})} 
+              className="w-full bg-gray-100 dark:bg-[#131314] text-gray-900 dark:text-white px-5 py-3.5 rounded-2xl border border-transparent focus:border-blue-500/50 outline-none transition-all shadow-inner" 
+            />
           </div>
 
           {/* Sessão: Comportamento */}
@@ -119,7 +125,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
               <label className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                <Cpu size={14} /> Seleção de Modelo
+                <Cpu size={14} /> Modelo Padrão ({localSettings.provider})
               </label>
               <div className="space-y-2">
                 <select 
@@ -130,7 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                   {AVAILABLE_MODELS.filter(m => m.provider === localSettings.provider).map(m => (
                     <option key={m.id} value={m.id}>{m.name}</option>
                   ))}
-                  <option value="custom">-- Modelo Personalizado --</option>
+                  <option value="custom">-- ID Personalizado --</option>
                 </select>
                 
                 {localSettings.modelId === 'custom' && (
@@ -159,7 +165,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-gray-900 dark:text-gray-200">Google Search Grounding</span>
-                    <span className="text-[10px] text-gray-500">Dados da web em tempo real</span>
+                    <span className="text-[10px] text-gray-500">Apenas para modelos Google</span>
                   </div>
                 </div>
                 {localSettings.googleSearchEnabled ? <ToggleRight className="text-blue-500" size={28} /> : <ToggleLeft className="text-gray-400 dark:text-gray-600" size={28} />}

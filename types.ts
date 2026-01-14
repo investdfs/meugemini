@@ -47,7 +47,8 @@ export type Theme = 'light' | 'dark';
 
 export interface AppSettings {
   provider: Provider;
-  apiKey?: string; // Nova propriedade para armazenar a chave localmente
+  googleApiKey?: string;      // Chave específica para Google
+  openRouterApiKey?: string;  // Chave específica para OpenRouter
   modelId: string;
   customModelId?: string;
   systemInstruction?: string;
