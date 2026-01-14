@@ -1,3 +1,4 @@
+
 export interface Attachment {
   id: string;
   mimeType: string;
@@ -42,13 +43,17 @@ export interface ChatSession {
 
 export type Provider = 'google' | 'openrouter';
 
+export type Theme = 'light' | 'dark';
+
 export interface AppSettings {
   provider: Provider;
+  apiKey?: string; // Nova propriedade para armazenar a chave localmente
   modelId: string;
   customModelId?: string;
   systemInstruction?: string;
   googleSearchEnabled: boolean;
-  aiDisplayName: string; // Customizable AI Name
+  aiDisplayName: string;
+  theme: Theme;
 }
 
 export enum ModelId {

@@ -9,18 +9,32 @@ export interface StreamResult {
 }
 
 export class GeminiService {
-  private getApiKey(): string {
-    // Acesso seguro para evitar ReferenceError no browser
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        return process.env.API_KEY;
-      }
-    } catch (e) {}
-    return (window as any).process?.env?.API_KEY || '';
-  }
+  // O método agora aceita uma chave opcional passada na chamada
+  private getClient(apiKeyOverride?: string) {
+    // Ordem de prioridade: 
+    // 1. Chave passada via parâmetro (Configurações da UI)
+    // 2. Chave no process.env (Node/Vercel Edge)
+    // 3. Chave no window.process (Shim do navegador)
+    
+    let key = apiKeyOverride;
 
-  private getClient() {
-    return new GoogleGenAI({ apiKey: this.getApiKey() });
+    if (!key) {
+      try {
+        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+          key = process.env.API_KEY;
+        }
+      } catch (e) {}
+    }
+
+    if (!key) {
+      key = (window as any).process?.env?.API_KEY || '';
+    }
+
+    if (!key) {
+      throw new Error("Chave de API não configurada. Por favor, adicione sua API Key nas Configurações.");
+    }
+
+    return new GoogleGenAI({ apiKey: key });
   }
 
   async *streamChat(
@@ -29,10 +43,12 @@ export class GeminiService {
     newMessage: string,
     attachments: Attachment[] = [],
     systemInstruction?: string,
-    googleSearchEnabled: boolean = false
+    googleSearchEnabled: boolean = false,
+    apiKey?: string // Novo parâmetro
   ): AsyncGenerator<StreamResult, void, unknown> {
     
-    const ai = this.getClient();
+    // Inicializa o cliente com a chave correta
+    const ai = this.getClient(apiKey);
     
     try {
       // Se for um modelo de imagem ou o prompt pedir imagem explicitamente
@@ -100,13 +116,17 @@ export class GeminiService {
       
     } catch (error: any) {
       console.error("Gemini SDK Error:", error);
+      // Tratamento específico para erro de chave
+      if (error.message?.includes("403") || error.toString().includes("API key")) {
+         throw new Error("Erro de Permissão (403): Sua chave de API é inválida ou expirou. Atualize nas Configurações.");
+      }
       throw new Error(error.message || "Falha na comunicação com Gemini.");
     }
   }
 
-  async generateTitle(firstMessage: string): Promise<string> {
-    const ai = this.getClient();
+  async generateTitle(firstMessage: string, apiKey?: string): Promise<string> {
     try {
+      const ai = this.getClient(apiKey);
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Crie um título curtíssimo (máx 3 palavras) para este chat: "${firstMessage}". Responda apenas o título.`,

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, User, FileText, Link as LinkIcon, Save, Bot, Palette, Tag, Camera, Smile, Plus } from 'lucide-react';
 import { Agent } from '../types';
@@ -106,10 +107,10 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-xl bg-[#1e1f20] rounded-2xl shadow-2xl border border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-xl bg-white dark:bg-[#1e1f20] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 shrink-0 bg-[#282a2c]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0 bg-gray-50 dark:bg-[#282a2c]">
           <div className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg overflow-hidden transition-colors duration-300"
@@ -121,13 +122,13 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
                 <span className="text-xl">{avatar}</span>
               )}
             </div>
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {agentToEdit ? 'Customizar Agente' : 'Novo Agente Customizado'}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700 transition-colors"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <X size={20} />
           </button>
@@ -138,7 +139,7 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Visual Customization */}
-            <div className="space-y-4 p-4 bg-[#131314] rounded-xl border border-gray-800">
+            <div className="space-y-4 p-4 bg-gray-50 dark:bg-[#131314] rounded-xl border border-gray-200 dark:border-gray-800">
                <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
                     <Smile size={14} /> Avatar (Emoji ou Foto)
@@ -148,14 +149,14 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
                       <button 
                         key={emoji}
                         onClick={() => setAvatar(emoji)}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${avatar === emoji ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 hover:border-gray-500'}`}
+                        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all ${avatar === emoji ? 'border-blue-500 bg-blue-500/10' : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500'}`}
                       >
                         {emoji}
                       </button>
                     ))}
                     <button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-dashed border-gray-700 hover:border-blue-500 transition-colors"
+                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-dashed border-gray-400 dark:border-gray-700 hover:border-blue-500 transition-colors"
                       title="Upload Foto"
                     >
                       <Camera size={14} className="text-gray-500" />
@@ -173,14 +174,14 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
                       <button 
                         key={color}
                         onClick={() => setThemeColor(color)}
-                        className={`w-6 h-6 rounded-full border-2 transition-all transform hover:scale-110 ${themeColor === color ? 'border-white scale-110' : 'border-transparent'}`}
+                        className={`w-6 h-6 rounded-full border-2 transition-all transform hover:scale-110 ${themeColor === color ? 'border-white dark:border-white scale-110 shadow-md' : 'border-transparent'}`}
                         style={{ backgroundColor: color }}
                       />
                     ))}
                     <div className="relative w-8 h-8 ml-2">
                       <button 
                         onClick={() => colorInputRef.current?.click()}
-                        className="w-full h-full rounded-lg border border-gray-700 flex items-center justify-center bg-[#282a2c] hover:border-gray-500 transition-colors"
+                        className="w-full h-full rounded-lg border border-gray-300 dark:border-gray-700 flex items-center justify-center bg-white dark:bg-[#282a2c] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                         title="Escolher cor personalizada"
                       >
                         <Palette size={14} className="text-gray-400" />
@@ -207,17 +208,17 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && addTag()}
                       placeholder="Adicionar..."
-                      className="flex-1 bg-[#1e1f20] text-sm text-white px-3 py-1.5 rounded-lg border border-gray-700 focus:border-blue-500 outline-none"
+                      className="flex-1 bg-white dark:bg-[#1e1f20] text-sm text-gray-900 dark:text-white px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 focus:border-blue-500 outline-none"
                     />
-                    <button onClick={addTag} className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-white">
+                    <button onClick={addTag} className="p-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg text-gray-700 dark:text-white">
                       <Plus size={16} />
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {tags.map(tag => (
-                      <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-gray-800 text-gray-300 text-[10px] font-medium rounded-full border border-gray-700">
+                      <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[10px] font-medium rounded-full border border-gray-300 dark:border-gray-700">
                         #{tag}
-                        <button onClick={() => removeTag(tag)} className="hover:text-red-400">
+                        <button onClick={() => removeTag(tag)} className="hover:text-red-500 dark:hover:text-red-400">
                           <X size={10} />
                         </button>
                       </span>
@@ -229,7 +230,7 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
             {/* Basic Info */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <User size={16} /> Nome do Agente
                 </label>
                 <input
@@ -237,12 +238,12 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Especialista em Marketing"
-                  className="w-full bg-[#131314] text-white px-4 py-3 rounded-lg border border-gray-700 focus:border-blue-500 outline-none"
+                  className="w-full bg-gray-100 dark:bg-[#131314] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-transparent focus:border-blue-500 outline-none transition-all"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <FileText size={16} /> Descrição Curta
                 </label>
                 <input
@@ -250,7 +251,7 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ex: Ajuda a criar campanhas e copys"
-                  className="w-full bg-[#131314] text-white px-4 py-3 rounded-lg border border-gray-700 focus:border-blue-500 outline-none"
+                  className="w-full bg-gray-100 dark:bg-[#131314] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-transparent focus:border-blue-500 outline-none transition-all"
                 />
               </div>
             </div>
@@ -258,20 +259,20 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
 
           {/* System Instruction */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <Bot size={16} /> Contexto e Personalidade (System Prompt)
             </label>
             <textarea
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
               placeholder="Descreva como o agente deve se comportar, o que ele sabe e como deve responder..."
-              className="w-full bg-[#131314] text-white px-4 py-3 rounded-lg border border-gray-700 focus:border-blue-500 outline-none min-h-[120px] text-sm"
+              className="w-full bg-gray-100 dark:bg-[#131314] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-transparent focus:border-blue-500 outline-none min-h-[120px] text-sm"
             />
           </div>
 
           {/* Drive Link */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
               <LinkIcon size={16} /> Link da Pasta do Google Drive (Repositório)
             </label>
             <input
@@ -279,7 +280,7 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
               value={driveLink}
               onChange={(e) => setDriveLink(e.target.value)}
               placeholder="https://drive.google.com/drive/folders/..."
-              className="w-full bg-[#131314] text-white px-4 py-3 rounded-lg border border-gray-700 focus:border-blue-500 outline-none text-sm font-mono"
+              className="w-full bg-gray-100 dark:bg-[#131314] text-gray-900 dark:text-white px-4 py-3 rounded-lg border border-transparent focus:border-blue-500 outline-none text-sm font-mono"
             />
             <p className="text-xs text-gray-500">
               O agente usará este link como referência de contexto.
@@ -289,12 +290,12 @@ export const AgentsModal: React.FC<AgentsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-[#282a2c] flex justify-end shrink-0 border-t border-gray-700">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-[#282a2c] flex justify-end shrink-0 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={handleSubmit}
             disabled={!name.trim()}
             className={`px-8 py-2.5 text-white font-semibold rounded-full flex items-center gap-2 transition-all shadow-lg active:scale-95 ${
-                !name.trim() ? 'bg-gray-600 cursor-not-allowed' : 'hover:brightness-110 shadow-lg'
+                !name.trim() ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' : 'hover:brightness-110 shadow-lg'
             }`}
             style={{ backgroundColor: !name.trim() ? undefined : themeColor }}
           >

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { MessageSquare, Plus, Trash2, Menu, X, Settings, Bot, Search as SearchIcon, Edit2, Loader2 } from 'lucide-react';
 import { ChatSession, Agent } from '../types';
@@ -6,7 +5,7 @@ import { FuturisticLogo } from './FuturisticLogo';
 
 interface SidebarProps {
   isOpen: boolean;
-  toggleSidebar: void;
+  toggleSidebar: () => void;
   sessions: ChatSession[];
   agents: Agent[];
   currentSessionId: string | null;
@@ -86,8 +85,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className={`
         fixed top-0 left-0 bottom-0 z-30
-        w-[300px] bg-[#1e1f20] flex flex-col
-        transition-transform duration-300 ease-in-out
+        w-[300px] bg-white dark:bg-[#1e1f20] flex flex-col border-r border-gray-200 dark:border-r-0
+        transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 md:relative md:w-[300px] md:flex-shrink-0
       `}>
@@ -96,14 +95,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
            <div className="flex items-center justify-between">
               <button 
                 onClick={toggleSidebar}
-                className="md:hidden p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-700"
+                className="md:hidden p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <Menu size={20} />
               </button>
               <div className="flex items-center gap-3">
                  <FuturisticLogo size={28} isProcessing={isGenerating} />
-                 <div className="font-bold text-gray-200 tracking-tight text-lg">
-                    {aiDisplayName} <span className="text-blue-400">UI</span>
+                 <div className="font-bold text-gray-800 dark:text-gray-200 tracking-tight text-lg">
+                    {aiDisplayName} <span className="text-blue-500 dark:text-blue-400">UI</span>
                  </div>
               </div>
            </div>
@@ -115,12 +114,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 placeholder="Buscar conversas..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#131314] text-sm text-gray-300 pl-10 pr-4 py-2.5 rounded-xl border border-transparent focus:border-gray-700 outline-none transition-all"
+                className="w-full bg-gray-100 dark:bg-[#131314] text-sm text-gray-900 dark:text-gray-300 pl-10 pr-4 py-2.5 rounded-xl border border-transparent focus:border-gray-300 dark:focus:border-gray-700 outline-none transition-all placeholder-gray-500"
               />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black dark:hover:text-white"
                 >
                   <X size={14} />
                 </button>
@@ -131,9 +130,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="px-4 pb-2">
           <button
             onClick={onNewChat}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-[#282a2c] hover:bg-[#37393b] text-gray-300 rounded-full transition-all active:scale-95 shadow-lg shadow-black/20"
+            className="w-full flex items-center gap-3 px-4 py-3 bg-gray-100 dark:bg-[#282a2c] hover:bg-gray-200 dark:hover:bg-[#37393b] text-gray-700 dark:text-gray-300 rounded-full transition-all active:scale-95 shadow-sm dark:shadow-black/20"
           >
-            <Plus size={18} className="text-gray-400" />
+            <Plus size={18} className="text-gray-500 dark:text-gray-400" />
             <span className="text-sm font-semibold">Nova conversa</span>
           </button>
         </div>
@@ -144,19 +143,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Agentes Customizados</span>
                 <button 
                   onClick={() => onOpenAgentModal()}
-                  className="text-gray-500 hover:text-blue-400 transition-colors p-1"
+                  className="text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1"
                   title="Criar Agente"
                 >
                   <Plus size={14} />
                 </button>
              </div>
              
-             {/* Use type assertion to ensure 'agents' is correctly handled as an array of Agent */}
-             {(agents as Agent[]).length > 0 && (agents as Agent[]).map((agent: Agent) => (
+             {Array.isArray(agents) && agents.length > 0 && agents.map((agent) => (
                 <div 
                   key={agent.id}
                   onClick={() => onNewAgentChat(agent.id)}
-                  className="group flex flex-col px-3 py-2.5 rounded-2xl cursor-pointer hover:bg-[#282a2c] text-gray-300 hover:text-white transition-all mb-1 border border-transparent hover:border-gray-800"
+                  className="group flex flex-col px-3 py-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#282a2c] text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-all mb-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-800"
                 >
                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -196,13 +194,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer
                           transition-all text-sm
                           ${isActive 
-                            ? 'bg-blue-600/10 text-blue-100 border-l-2 border-blue-500' 
-                            : 'text-gray-400 hover:bg-[#282a2c] hover:text-white border-l-2 border-transparent'}
+                            ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-700 dark:text-blue-100 border-l-2 border-blue-500' 
+                            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#282a2c] hover:text-black dark:hover:text-white border-l-2 border-transparent'}
                         `}
                       >
                         <div className="flex items-center gap-3 overflow-hidden">
                           {isActive && isGenerating ? (
-                            <Loader2 size={14} className="animate-spin text-blue-400" />
+                            <Loader2 size={14} className="animate-spin text-blue-500 dark:text-blue-400" />
                           ) : (
                             <MessageSquare size={16} className="flex-shrink-0 opacity-40" />
                           )}
@@ -213,7 +211,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         
                         <button
                           onClick={(e) => onDeleteSession(session.id, e)}
-                          className="p-1.5 rounded-lg text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -226,10 +224,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-800 bg-[#1e1f20]">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1f20]">
           <button
             onClick={onOpenSettings}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-[#282a2c] rounded-xl transition-all"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#282a2c] rounded-xl transition-all"
           >
             <Settings size={18} />
             <span>Configurações</span>
