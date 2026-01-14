@@ -9,6 +9,7 @@ import { MessageBubble } from './components/MessageBubble';
 import { SettingsModal } from './components/SettingsModal';
 import { AgentsModal } from './components/AgentsModal';
 import { TriggersModal } from './components/TriggersModal';
+import { WelcomeSetupModal } from './components/WelcomeSetupModal';
 import { ModelSelector } from './components/ModelSelector';
 import { FuturisticLogo } from './components/FuturisticLogo';
 import { GeminiService } from './services/geminiService';
@@ -60,6 +61,7 @@ const App: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<(Attachment & { extractedText?: string })[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -70,13 +72,32 @@ const App: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Gerenciamento do Tema
+  // Auto-resize do textarea conforme o conteúdo
   useEffect(() => {
-    if (settings.theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'; // Reseta para calcular scrollHeight corretamente
+      const newHeight = Math.min(inputRef.current.scrollHeight, 180); // Limite de 180px
+      inputRef.current.style.height = `${newHeight}px`;
     }
+  }, [input]);
+
+  // Verifica se qualquer provedor tem chave configurada
+  const hasAnyApiKey = !!(settings.googleApiKey || settings.openRouterApiKey || settings.openaiApiKey || 
+                        settings.anthropicApiKey || settings.deepseekApiKey || settings.groqApiKey || settings.mistralApiKey);
+  
+  const isCurrentProviderActive = (
+    (settings.provider === 'google' && settings.googleApiKey) ||
+    (settings.provider === 'openai' && settings.openaiApiKey) ||
+    (settings.provider === 'anthropic' && settings.anthropicApiKey) ||
+    (settings.provider === 'deepseek' && settings.deepseekApiKey) ||
+    (settings.provider === 'groq' && settings.groqApiKey) ||
+    (settings.provider === 'mistral' && settings.mistralApiKey) ||
+    (settings.provider === 'openrouter' && settings.openRouterApiKey)
+  );
+
+  useEffect(() => {
+    if (settings.theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [settings.theme]);
 
   const toggleTheme = () => {
@@ -85,23 +106,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     try {
-      // Carregar Configurações
       const savedSettings = localStorage.getItem('gemini-settings-v2');
       if (savedSettings) {
         const decompressed = LZString.decompress(savedSettings);
         if (decompressed) {
           const parsed = JSON.parse(decompressed);
-          // Migração de dados legados (apiKey antiga vira googleApiKey)
-          if (parsed.apiKey && !parsed.googleApiKey) {
-             parsed.googleApiKey = parsed.apiKey;
-             delete parsed.apiKey;
-          }
-          if (!parsed.theme) parsed.theme = 'dark';
-          setSettings(parsed);
+          setSettings(prev => ({ ...prev, ...parsed }));
         }
       }
 
-      // Carregar Sessões
       const savedSessions = localStorage.getItem('gemini-sessions-v2');
       if (savedSessions) {
         const decompressed = LZString.decompress(savedSessions);
@@ -115,15 +128,13 @@ const App: React.FC = () => {
         createNewSession();
       }
 
-      // Carregar Agentes
       const savedAgents = localStorage.getItem('gemini-agents-v2');
       if (savedAgents) {
         const decompressed = LZString.decompress(savedAgents);
         if (decompressed) setAgents(JSON.parse(decompressed));
       }
     } catch (e) {
-      console.error("Erro ao carregar dados locais", e);
-      setInitError("Erro ao restaurar sessão. Se o problema persistir, limpe o cache do navegador.");
+      setInitError("Erro ao restaurar sessão.");
     }
   }, []);
 
@@ -153,7 +164,7 @@ const App: React.FC = () => {
   const createNewSession = (agentId?: string) => {
     const newSession: ChatSession = { 
       id: generateId(), 
-      title: agentId ? `Agente: ${agents.find(a => a.id === agentId)?.name}` : 'Nova conversa', 
+      title: 'Nova conversa', 
       messages: [], 
       updatedAt: Date.now(), 
       agentId 
@@ -167,14 +178,24 @@ const App: React.FC = () => {
   const handleSaveAgent = (savedAgent: Agent) => {
     setAgents(prev => {
       const exists = prev.some(a => a.id === savedAgent.id);
-      if (exists) {
-        return prev.map(a => a.id === savedAgent.id ? savedAgent : a);
-      }
+      if (exists) return prev.map(a => a.id === savedAgent.id ? savedAgent : a);
       return [...prev, savedAgent];
     });
   };
 
   const handleSendMessage = async () => {
+    // Se não houver NENHUMA chave API configurada, mostramos o modal de boas-vindas
+    if (!hasAnyApiKey) {
+      setShowWelcome(true);
+      return;
+    }
+
+    // Se houver chaves mas o provedor ATUAL não estiver ativo, abrimos as configurações
+    if (!isCurrentProviderActive) {
+      setIsSettingsOpen(true);
+      return;
+    }
+
     let targetSessionId = currentSessionId;
     if (!targetSessionId) {
       const newSessId = generateId();
@@ -207,10 +228,14 @@ const App: React.FC = () => {
         parts: [{ text: m.text }] 
       })) || [];
 
-      // API Keys Collection
       const apiKeys = {
         google: settings.googleApiKey,
-        openRouter: settings.openRouterApiKey
+        openRouter: settings.openRouterApiKey,
+        openai: settings.openaiApiKey,
+        anthropic: settings.anthropicApiKey,
+        deepseek: settings.deepseekApiKey,
+        groq: settings.groqApiKey,
+        mistral: settings.mistralApiKey
       };
 
       if (history.length === 0) {
@@ -222,11 +247,9 @@ const App: React.FC = () => {
       let systemPrompt = settings.systemInstruction || '';
       if (currentAgent) systemPrompt += `\nPersonalidade do Agente: ${currentAgent.systemInstruction}`;
       
-      const activeModelId = settings.modelId === 'custom' && settings.customModelId ? settings.customModelId : settings.modelId;
-      
       const stream = geminiService.current.streamChat(
         settings.provider,
-        activeModelId, 
+        settings.modelId, 
         history, 
         userMsgText, 
         currentAttachments, 
@@ -241,11 +264,7 @@ const App: React.FC = () => {
             const newMsgs = [...s.messages];
             const idx = newMsgs.findIndex(m => m.id === botMsgId);
             if (idx !== -1) {
-              const currentAtts = newMsgs[idx].attachments || [];
-              if (chunk.generatedImage && !currentAtts.find(a => a.data === chunk.generatedImage)) {
-                 currentAtts.push({ id: generateId(), mimeType: 'image/png', fileName: 'Gerada pela IA', data: chunk.generatedImage.split(',')[1] });
-              }
-              newMsgs[idx] = { ...newMsgs[idx], text: chunk.text || (chunk.generatedImage ? 'Imagem gerada com sucesso.' : ''), sources: chunk.sources, attachments: currentAtts };
+              newMsgs[idx] = { ...newMsgs[idx], text: chunk.text || '', sources: chunk.sources };
             }
             return { ...s, messages: newMsgs, updatedAt: Date.now() };
           }
@@ -305,9 +324,9 @@ const App: React.FC = () => {
         isGenerating={isGenerating}
       />
       <main className="flex-1 flex flex-col h-full relative">
-        <header className="h-12 flex items-center justify-between px-6 border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-gemini-dark/80 backdrop-blur-md z-10 shrink-0 transition-colors duration-300">
+        <header className="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-gemini-dark/80 backdrop-blur-md z-10 shrink-0 transition-colors duration-300">
           <div className="flex items-center gap-3">
-            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all"><Menu size={16} /></button>
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all"><Menu size={18} /></button>
             <ModelSelector 
               settings={settings} 
               onUpdateSettings={(newSettings) => setSettings(prev => ({...prev, ...newSettings}))}
@@ -316,10 +335,9 @@ const App: React.FC = () => {
           </div>
           <button 
             onClick={toggleTheme} 
-            className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all"
-            title={settings.theme === 'dark' ? 'Mudar para Tema Claro' : 'Mudar para Tema Escuro'}
+            className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all"
           >
-            {settings.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {settings.theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </header>
 
@@ -330,42 +348,36 @@ const App: React.FC = () => {
                 <div className="float-animation mb-6">
                    <FuturisticLogo size={60} isProcessing={isGenerating} />
                 </div>
-                <h1 className="text-xl font-black mb-1 bg-gradient-to-r from-blue-600 via-violet-600 to-cyan-600 dark:from-blue-400 dark:via-violet-400 dark:to-cyan-400 bg-clip-text text-transparent text-center tracking-tight px-4">
+                <h1 className="text-2xl font-black mb-1 bg-gradient-to-r from-blue-600 via-violet-600 to-cyan-600 dark:from-blue-400 dark:via-violet-400 dark:to-cyan-400 bg-clip-text text-transparent text-center tracking-tight px-4">
                   {WELCOME_MESSAGE_TEMPLATE.replace("{name}", settings.aiDisplayName)}
                 </h1>
-                <p className="text-gray-500 dark:text-gray-600 text-[10px] max-w-xs text-center leading-relaxed font-black uppercase tracking-[0.2em] mb-8">
+                <p className="text-gray-500 dark:text-gray-600 text-[10px] max-w-xs text-center leading-relaxed font-black uppercase tracking-[0.3em] mb-10">
                    Engenharia de Documentos
                 </p>
-                <div className="flex flex-wrap justify-center gap-2 w-full max-w-2xl px-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl px-4">
                    {PROFESSIONAL_STARTERS.map(starter => (
                      <button 
                         key={starter.id}
                         onClick={() => setInput(starter.prompt)}
-                        className="px-3 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all flex items-center gap-2 group shadow-sm dark:shadow-none min-w-[140px]"
+                        className="px-4 py-3 rounded-2xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all flex flex-col gap-1 group shadow-sm dark:shadow-none text-left"
                      >
-                        <div className="w-6 h-6 rounded bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-400/10 transition-all shrink-0">
-                           {starter.id === 'doc_analysis' ? <FileSearch size={14}/> : 
-                            starter.id === 'doc_contract' ? <ScrollText size={14}/> : 
-                            starter.id === 'doc_structure' ? <LayoutTemplate size={14}/> : <PenTool size={14}/>}
-                        </div>
-                        <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white truncate">{starter.label}</span>
+                        <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{starter.label}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{starter.prompt}</span>
                      </button>
                    ))}
-                   <button 
-                      onClick={() => setInput("Gere uma imagem de um astronauta futurista em Marte, estilo cyberpunk.")}
-                      className="px-3 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-violet-500/20 hover:bg-violet-50 dark:hover:bg-violet-500/5 transition-all flex items-center gap-2 group shadow-sm dark:shadow-none min-w-[140px]"
-                   >
-                      <div className="w-6 h-6 rounded bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-violet-600 dark:group-hover:text-violet-400 group-hover:bg-violet-100 dark:group-hover:bg-violet-400/10 transition-all shrink-0">
-                         <ImageIcon size={14}/>
-                      </div>
-                      <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white truncate">Gerar Imagem</span>
-                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex-1 space-y-4 pb-12">
-                {messages.map(m => (
-                  <MessageBubble key={m.id} message={m} isAgentContext={!!currentAgent} themeColor={currentAgent?.themeColor} avatar={currentAgent?.avatar} isTyping={isGenerating && m.id === messages[messages.length-1].id && m.role === 'model' && !m.text} />
+                {messages.map((m, idx) => (
+                  <MessageBubble 
+                    key={m.id} 
+                    message={m} 
+                    isAgentContext={!!currentAgent} 
+                    themeColor={currentAgent?.themeColor} 
+                    avatar={currentAgent?.avatar} 
+                    isTyping={isGenerating && idx === messages.length - 1 && m.role === 'model'} 
+                  />
                 ))}
                 <div ref={messagesEndRef} />
               </div>
@@ -374,46 +386,46 @@ const App: React.FC = () => {
         </div>
 
         <div className="p-4 bg-white/80 dark:bg-gemini-dark/80 backdrop-blur-md transition-colors duration-300">
-          <div className="max-w-3xl mx-auto space-y-2">
+          <div className="max-w-3xl mx-auto space-y-3">
             {selectedFiles.length > 0 && (
                <div className="flex flex-wrap gap-2 px-1">
                   {selectedFiles.map(file => (
-                    <div key={file.id} className="relative group bg-gray-100 dark:bg-white/5 rounded-lg p-1.5 border border-gray-200 dark:border-white/10 flex items-center gap-2 animate-message">
-                       <FileText size={14} className="text-blue-500 dark:text-blue-400" />
-                       <span className="text-[10px] text-gray-700 dark:text-gray-300 max-w-[100px] truncate">{file.fileName}</span>
-                       <button onClick={() => setSelectedFiles(prev => prev.filter(f => f.id !== file.id))} className="text-gray-500 hover:text-red-500 dark:hover:text-red-400"><X size={12} /></button>
+                    <div key={file.id} className="relative group bg-gray-100 dark:bg-white/10 rounded-xl p-2 border border-gray-200 dark:border-white/10 flex items-center gap-3 animate-message">
+                       <FileText size={16} className="text-blue-600 dark:text-blue-400" />
+                       <span className="text-xs font-bold text-gray-700 dark:text-gray-200 max-w-[120px] truncate">{file.fileName}</span>
+                       <button onClick={() => setSelectedFiles(prev => prev.filter(f => f.id !== file.id))} className="text-gray-500 hover:text-red-500"><X size={14} /></button>
                     </div>
                   ))}
                </div>
             )}
             <div className={`
-              flex items-end gap-2 glass rounded-2xl p-3 transition-all duration-300
-              ${isGenerating ? 'opacity-50 pointer-events-none' : 'focus-within:border-blue-500/20 dark:focus-within:border-white/10 shadow-lg'}
+              flex items-end gap-3 glass rounded-[2rem] p-4 transition-all duration-500 border border-gray-200 dark:border-white/5
+              ${isGenerating ? 'opacity-50 pointer-events-none grayscale' : 'focus-within:border-blue-500/40 shadow-2xl'}
             `}>
               <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
-              <button onClick={() => setIsTriggersOpen(true)} className="p-3 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all" title="Gatilhos"><Zap size={20} /></button>
-              <button onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-500 dark:text-gray-600 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all" title="Anexar"><Paperclip size={20} /></button>
+              <button onClick={() => setIsTriggersOpen(true)} className="p-3 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-600/20 rounded-2xl transition-all" title="Biblioteca de Prompts"><Zap size={22} /></button>
+              <button onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-400 hover:bg-black/5 rounded-2xl transition-all" title="Anexar Arquivos"><Paperclip size={22} /></button>
               <textarea 
                 ref={inputRef} value={input} 
                 onChange={e => setInput(e.target.value)} 
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())} 
-                placeholder="Pergunte qualquer coisa..." 
-                className="w-full bg-transparent text-gray-900 dark:text-white py-3 outline-none resize-none min-h-[50px] max-h-60 text-sm placeholder-gray-500 dark:placeholder-gray-600 px-2" 
-                rows={3} 
+                placeholder="Como posso ajudar com seus documentos hoje?" 
+                className="w-full bg-transparent text-gray-900 dark:text-white py-3 outline-none resize-none min-h-[50px] text-sm placeholder-gray-400 px-2 custom-scrollbar" 
+                rows={1} 
               />
               <button 
                 onClick={handleSendMessage} 
                 disabled={isGenerating || (!input.trim() && selectedFiles.length === 0)} 
-                className={`p-3 rounded-xl transition-all mb-1 ${isGenerating ? 'text-gray-400 dark:text-gray-600' : 'bg-black dark:bg-white text-white dark:text-black hover:scale-105 active:scale-95 shadow-md'}`}
+                className={`p-4 rounded-2xl transition-all mb-0.5 shrink-0 ${isGenerating || (!input.trim() && selectedFiles.length === 0) ? 'bg-gray-100 dark:bg-white/5 text-gray-400' : 'bg-gray-900 dark:bg-white text-white dark:text-black hover:scale-105 active:scale-95 shadow-xl shadow-blue-500/10'}`}
               >
-                <Send size={20} />
+                <Send size={22} />
               </button>
             </div>
-            <p className="text-[9px] text-gray-400 dark:text-gray-600 text-center font-bold uppercase tracking-widest pt-1">
-               Gemini pode cometer erros. Considere verificar informações importantes.
-            </p>
           </div>
         </div>
+        
+        <WelcomeSetupModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} onOpenSettings={() => { setShowWelcome(false); setIsSettingsOpen(true); }} />
+        
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onSave={setSettings} onExportData={() => {}} onImportData={() => {}} />
         <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={handleSaveAgent} agentToEdit={editingAgent} />
         <TriggersModal isOpen={isTriggersOpen} onClose={() => setIsTriggersOpen(false)} onSelectPrompt={setInput} />

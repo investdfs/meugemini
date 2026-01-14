@@ -41,32 +41,26 @@ export interface ChatSession {
   agentId?: string; // Optional link to an agent
 }
 
-export type Provider = 'google' | 'openrouter';
+export type Provider = 'google' | 'openrouter' | 'openai' | 'anthropic' | 'deepseek' | 'groq' | 'mistral' | 'xai';
 
 export type Theme = 'light' | 'dark';
 
 export interface AppSettings {
   provider: Provider;
-  googleApiKey?: string;      // Chave específica para Google
-  openRouterApiKey?: string;  // Chave específica para OpenRouter
+  googleApiKey?: string;
+  openRouterApiKey?: string;
+  openaiApiKey?: string;
+  anthropicApiKey?: string;
+  deepseekApiKey?: string;
+  groqApiKey?: string;
+  mistralApiKey?: string;
+  xaiApiKey?: string;
   modelId: string;
   customModelId?: string;
   systemInstruction?: string;
   googleSearchEnabled: boolean;
   aiDisplayName: string;
   theme: Theme;
-}
-
-export enum ModelId {
-  // Google Native
-  GeminiFlash = 'gemini-3-flash-preview',
-  GeminiPro = 'gemini-3-pro-preview',
-  Gemini25Flash = 'gemini-2.5-flash-latest',
-  
-  // OpenRouter Common IDs
-  DeepSeekR1 = 'deepseek/deepseek-r1:free',
-  Claude35Sonnet = 'anthropic/claude-3.5-sonnet',
-  Llama370B = 'meta-llama/llama-3-70b-instruct',
 }
 
 export interface ModelOption {

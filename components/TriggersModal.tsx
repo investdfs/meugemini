@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Search, Zap, ChevronRight, Scale, GraduationCap, Briefcase } from 'lucide-react';
+import { X, Search, Zap, ChevronRight, Scale, GraduationCap, Briefcase, FileText } from 'lucide-react';
 import { COMMAND_LIBRARY } from '../constants';
 
 interface TriggersModalProps {
@@ -22,6 +22,13 @@ export const TriggersModal: React.FC<TriggersModalProps> = ({ isOpen, onClose, o
     )
   })).filter(cat => cat.items.length > 0);
 
+  const handleSelect = (prompt: string) => {
+    // Concatena a exigência de contexto adicional após o prompt do gatilho
+    const promptWithContextRequirement = `${prompt}\n\n---\n**CONTEXTO ADICIONAL (Obrigatório):**\n[Descreva aqui os detalhes, nomes, datas ou finalidade específica deste documento para que eu possa gerar a resposta adequada]`;
+    onSelectPrompt(promptWithContextRequirement);
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4">
       <div className="w-full max-w-2xl bg-white dark:bg-[#1e1f20] rounded-3xl border border-gray-200 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-message">
@@ -34,7 +41,7 @@ export const TriggersModal: React.FC<TriggersModalProps> = ({ isOpen, onClose, o
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Biblioteca de Comandos</h2>
-              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">Engenharia de Documentos</p>
+              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">Engenharia de Documentos Militares</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-black dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all">
@@ -61,15 +68,15 @@ export const TriggersModal: React.FC<TriggersModalProps> = ({ isOpen, onClose, o
           {filteredLibrary.length > 0 ? filteredLibrary.map((category, idx) => (
             <div key={idx} className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-[0.2em] px-1">
-                {category.category.includes("Jurídico") ? <Scale size={12}/> : 
-                 category.category.includes("Acadêmico") ? <GraduationCap size={12}/> : <Briefcase size={12}/>}
+                {category.category.includes("Militar") ? <FileText size={12}/> : 
+                 category.category.includes("Contratos") ? <Scale size={12}/> : <Briefcase size={12}/>}
                 {category.category}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {category.items.map((item, itemIdx) => (
                   <button
                     key={itemIdx}
-                    onClick={() => { onSelectPrompt(item.prompt); onClose(); }}
+                    onClick={() => handleSelect(item.prompt)}
                     className="group flex flex-col items-start p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all text-left relative overflow-hidden"
                   >
                     <div className="flex items-center justify-between w-full mb-1">

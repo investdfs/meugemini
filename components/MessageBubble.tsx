@@ -67,7 +67,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
           `}>
             
             {/* Action Bar (Top Corner) */}
-            {!isUser && !isError && (
+            {!isUser && !isError && message.text && (
               <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={handleCopy}
@@ -106,7 +106,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
             )}
 
             {/* Message Text */}
-            <div className={`markdown-body ${isTyping ? 'typing-cursor' : ''}`}>
+            <div className={`markdown-body ${isTyping && message.text ? 'typing-cursor' : ''}`}>
               {isError ? (
                 <div className="flex items-center gap-2 text-red-500 dark:text-red-400 py-0.5">
                    <AlertCircle size={14} />
@@ -114,6 +114,13 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isAgentCo
                 </div>
               ) : isUser ? (
                 <p className="whitespace-pre-wrap">{message.text}</p>
+              ) : !message.text && isTyping ? (
+                /* Enhanced Typing Indicator Dots */
+                <div className="flex items-center gap-1 py-1 px-1">
+                  <div className="w-1.5 h-1.5 bg-blue-500/60 dark:bg-blue-400/60 rounded-full dot-pulse"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-500/60 dark:bg-blue-400/60 rounded-full dot-pulse"></div>
+                  <div className="w-1.5 h-1.5 bg-blue-500/60 dark:bg-blue-400/60 rounded-full dot-pulse"></div>
+                </div>
               ) : (
                 <ReactMarkdown>{message.text}</ReactMarkdown>
               )}
