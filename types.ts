@@ -1,9 +1,18 @@
 
+
 export interface Attachment {
   id: string;
   mimeType: string;
   data: string; // Base64 string (raw content)
   fileName: string;
+}
+
+export interface KnowledgeChunk {
+  id: string;
+  fileId: string;
+  fileName: string;
+  text: string;
+  score?: number;
 }
 
 export interface MessageSource {
@@ -19,6 +28,7 @@ export interface Message {
   isError?: boolean;
   attachments?: Attachment[];
   sources?: MessageSource[];
+  retrievedChunks?: KnowledgeChunk[]; // Trechos usados para gerar a resposta
 }
 
 export interface Agent {
@@ -39,6 +49,7 @@ export interface ChatSession {
   messages: Message[];
   updatedAt: number;
   agentId?: string; // Optional link to an agent
+  editorContent?: string; // Conteúdo persistido no editor para esta sessão
 }
 
 export type Provider = 'google' | 'openrouter' | 'openai' | 'anthropic' | 'deepseek' | 'groq' | 'mistral' | 'xai';
@@ -59,6 +70,7 @@ export interface AppSettings {
   customModelId?: string;
   systemInstruction?: string;
   googleSearchEnabled: boolean;
+  isSplitViewEnabled: boolean; // Ativado pelo usuário abaixo do chat
   aiDisplayName: string;
   theme: Theme;
 }
@@ -68,4 +80,19 @@ export interface ModelOption {
   name: string;
   description: string;
   provider: Provider;
+}
+
+// Interfaces para Workflow adicionadas para suportar o componente WorkflowModal
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  prompt: string;
+}
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  steps: WorkflowStep[];
 }

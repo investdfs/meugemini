@@ -1,5 +1,5 @@
 {
-  "name": "gemini-clone-ui",
+  "name": "assistente-léo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -16,7 +16,10 @@
     "react-markdown": "^10.1.0",
     "pdfjs-dist": "4.10.38",
     "lz-string": "^1.5.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "docx": "9.1.0",
+    "crypto-js": "^4.2.0",
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

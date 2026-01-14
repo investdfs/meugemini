@@ -1,7 +1,8 @@
+
 {
-  "name": "Gemini Profissional",
-  "short_name": "Gemini Pro",
-  "description": "Interface avançada para modelos de IA Gemini e OpenRouter.",
+  "name": "Assistente Léo",
+  "short_name": "Léo",
+  "description": "Interface avançada para modelos de IA Gemini, OpenRouter e outros.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0d0e",

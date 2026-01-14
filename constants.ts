@@ -1,5 +1,6 @@
 
-import { Provider, ModelOption } from './types';
+
+import { Provider, ModelOption, Workflow } from './types';
 
 export const AVAILABLE_MODELS: ModelOption[] = [
   // --- GOOGLE ---
@@ -30,7 +31,7 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   { id: 'deepseek-chat', name: 'DeepSeek V3', description: 'Eficiência extrema em conversação e lógica', provider: 'deepseek' },
 
   // --- GROQ (Hardware Accelerated) ---
-  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Groq)', description: 'Performance de GPT-4 com velocidade instantânea', provider: 'groq' },
+  { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B (Groq)', description: 'Performance de GPT-4 with velocidade instantânea', provider: 'groq' },
   { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 (Distill Llama)', description: 'Raciocínio R1 com a velocidade do Groq', provider: 'groq' },
   { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B (Groq)', description: 'Resposta em milissegundos', provider: 'groq' },
 
@@ -56,9 +57,9 @@ export const PROVIDER_LABELS: Record<Provider, string> = {
 };
 
 export const DEFAULT_MODEL = 'gemini-3-flash-preview';
-export const DEFAULT_AI_NAME = "Gemini Docs";
+export const DEFAULT_AI_NAME = "Assistente Léo";
 
-export const WELCOME_MESSAGE_TEMPLATE = "Olá! Sou o {name}. Qual documento vamos redigir hoje?";
+export const WELCOME_MESSAGE_TEMPLATE = "Olá! Sou o {name}. Como posso ajudar você hoje?";
 
 export const PROFESSIONAL_STARTERS = [
   {
@@ -98,64 +99,51 @@ export const COMMAND_LIBRARY = [
       { 
         title: "8. Revisão Técnica Militar", 
         prompt: "Atue como revisor técnico de documentos militares. Vou enviar um texto para revisão, ajuste de linguagem, correção de impropriedades e adequação ao padrão da correspondência militar." 
+      }
+    ]
+  }
+];
+
+// Constante WORKFLOW_LIBRARY adicionada para suportar o componente WorkflowModal
+export const WORKFLOW_LIBRARY: Workflow[] = [
+  {
+    id: 'wf_revision_full',
+    name: 'Revisão Completa e Padronização',
+    description: 'Análise profunda de conformidade com a EB10-IG-01.001 seguida de melhoria de redação.',
+    icon: '📋',
+    steps: [
+      {
+        id: 'step1',
+        name: 'Verificação de Conformidade',
+        prompt: 'Analise o documento anexo e identifique desvios em relação à EB10-IG-01.001. Liste apenas os pontos a corrigir.'
       },
-      { 
-        title: "11. Ofício / Documento Externo", 
-        prompt: "Atue como assessor administrativo da Administração Pública Militar. Elaborar documento oficial externo, com linguagem formal, impessoal e adequada ao destinatário. Objetivo: informar ou solicitar providência." 
+      {
+        id: 'step2',
+        name: 'Ajuste de Linguagem',
+        prompt: 'Com base nas correções identificadas, reescreva o texto utilizando linguagem militar formal, objetiva e impessoal.'
       },
-      { 
-        title: "12. Mesmo Escalão", 
-        prompt: "Atue como assessor administrativo militar. Elaborar documento destinado a OM do mesmo escalão, com linguagem formal, direta e objetiva. Objetivo: coordenação administrativa." 
-      },
-      { 
-        title: "14. Padronização Interna", 
-        prompt: "Atue como assessor administrativo militar experiente. Elaborar texto normativo ou orientativo para padronização de procedimentos internos. Use linguagem clara, formal e impessoal." 
-      },
-      { 
-        title: "15. GATILHO MASTER", 
-        prompt: "Atue como assessor jurídico-administrativo da Administração Pública Militar, com experiência em OM operativa. O documento é oficial, deve observar a EB10-IG-01.001 e o padrão SPED. Use linguagem formal, objetiva e impessoal, sem floreios. Objetivo: garantir clareza, conformidade normativa e segurança jurídica." 
+      {
+        id: 'step3',
+        name: 'Finalização SPED',
+        prompt: 'Formate o texto final no padrão SPED para DIEx, garantindo que o Assunto e a Referência estejam destacados corretamente.'
       }
     ]
   },
   {
-    category: "Contratos e Licitações (Lei 14.133)",
-    items: [
-      { 
-        title: "3. Contrato Administrativo", 
-        prompt: "Atue como assessor jurídico-administrativo da Administração Pública Militar. O documento trata de contrato administrativo e deve observar a Lei nº 14.133/2021. Use linguagem técnica, precisa e sem ambiguidades. Objetivo: instruir processo contratual." 
+    id: 'wf_contract_analysis',
+    name: 'Análise de Contrato (14.133)',
+    description: 'Verificação técnica de minutas de contrato baseada na nova lei de licitações.',
+    icon: '⚖️',
+    steps: [
+      {
+        id: 'step1',
+        name: 'Extração de Cláusulas Críticas',
+        prompt: 'Identifique e extraia as cláusulas de sanções e rescisão do contrato anexo.'
       },
-      { 
-        title: "4. Fiscalização de Contratos", 
-        prompt: "Atue como especialista em fiscalização de contratos administrativos militares. Elaborar texto técnico, claro e juridicamente defensável, sem linguagem coloquial. Objetivo: registrar, informar ou justificar ato de fiscalização." 
-      },
-      { 
-        title: "5. Termo Aditivo", 
-        prompt: "Atue como consultor jurídico-administrativo militar. Redigir ou revisar cláusulas de termo aditivo, preservando o sentido jurídico, a legalidade e a padronização administrativa. Objetivo: ajuste formal do contrato." 
-      },
-      { 
-        title: "6. Apostilamento Contratual", 
-        prompt: "Atue como assessor jurídico-administrativo da Administração Pública Militar. Elaborar texto de apostilamento contratual, com linguagem objetiva e estritamente técnica. Objetivo: registrar alteração sem modificação do objeto contratual." 
-      },
-      { 
-        title: "9. Correção de Cláusulas", 
-        prompt: "Atue como assessor jurídico-administrativo. Reescreva as cláusulas a seguir, mantendo o sentido jurídico original, eliminando ambiguidades e aprimorando a técnica redacional." 
-      },
-      { 
-        title: "10. E-mail Institucional Fornecedor", 
-        prompt: "Atue como assessor administrativo militar. Elaborar e-mail institucional para fornecedor, com linguagem formal, objetiva e alinhada às rotinas de contratos da Administração Pública. Objetivo: comunicação oficial." 
-      },
-      { 
-        title: "13. Instrução de Processo", 
-        prompt: "Atue como assessor jurídico-administrativo da Administração Pública Militar. Elaborar texto para instrução de processo administrativo, garantindo clareza, encadeamento lógico e segurança jurídica." 
-      }
-    ]
-  },
-  {
-    category: "Suporte e Justificativa",
-    items: [
-      { 
-        title: "7. Justificativa Administrativa", 
-        prompt: "Atue como assessor administrativo militar. Elaborar justificativa administrativa clara, lógica e juridicamente segura, destinada à instrução de processo. Evite subjetividade e termos genéricos." 
+      {
+        id: 'step2',
+        name: 'Checklist Lei 14.133',
+        prompt: 'Verifique se as cláusulas extraídas estão em conformidade com os artigos correspondentes da Lei nº 14.133/2021.'
       }
     ]
   }

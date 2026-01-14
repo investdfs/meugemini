@@ -1,5 +1,5 @@
 {
-  "name": "Gemini Clone UI",
-  "description": "Uma interface de chat completa inspirada no Google Gemini, permitindo uso de chave API personalizada e seleção de modelos.",
+  "name": "Assistente Léo",
+  "description": "Uma interface de chat completa e inteligente, permitindo uso de múltiplas chaves API e seleção de modelos avançados.",
   "requestFramePermissions": []
 }
