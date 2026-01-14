@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Menu, Paperclip, X, Zap, FileText, Code, Globe, Languages, AlertCircle, Image as ImageIcon, Sun, Moon } from 'lucide-react';
+import { Send, Menu, Paperclip, X, Zap, FileText, AlertCircle, Image as ImageIcon, Sun, Moon, FileSearch, ScrollText, LayoutTemplate, PenTool } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import LZString from 'lz-string';
 
@@ -164,6 +164,16 @@ const App: React.FC = () => {
     setInput('');
   };
 
+  const handleSaveAgent = (savedAgent: Agent) => {
+    setAgents(prev => {
+      const exists = prev.some(a => a.id === savedAgent.id);
+      if (exists) {
+        return prev.map(a => a.id === savedAgent.id ? savedAgent : a);
+      }
+      return [...prev, savedAgent];
+    });
+  };
+
   const handleSendMessage = async () => {
     let targetSessionId = currentSessionId;
     if (!targetSessionId) {
@@ -324,7 +334,7 @@ const App: React.FC = () => {
                   {WELCOME_MESSAGE_TEMPLATE.replace("{name}", settings.aiDisplayName)}
                 </h1>
                 <p className="text-gray-500 dark:text-gray-600 text-[10px] max-w-xs text-center leading-relaxed font-black uppercase tracking-[0.2em] mb-8">
-                   Como posso ajudar?
+                   Engenharia de Documentos
                 </p>
                 <div className="flex flex-wrap justify-center gap-2 w-full max-w-2xl px-4">
                    {PROFESSIONAL_STARTERS.map(starter => (
@@ -334,7 +344,9 @@ const App: React.FC = () => {
                         className="px-3 py-2 rounded-lg bg-white dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/20 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all flex items-center gap-2 group shadow-sm dark:shadow-none min-w-[140px]"
                      >
                         <div className="w-6 h-6 rounded bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-400/10 transition-all shrink-0">
-                           {starter.id === 'pdf' ? <FileText size={14}/> : starter.id === 'code' ? <Code size={14}/> : starter.id === 'web' ? <Globe size={14}/> : <Languages size={14}/>}
+                           {starter.id === 'doc_analysis' ? <FileSearch size={14}/> : 
+                            starter.id === 'doc_contract' ? <ScrollText size={14}/> : 
+                            starter.id === 'doc_structure' ? <LayoutTemplate size={14}/> : <PenTool size={14}/>}
                         </div>
                         <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white truncate">{starter.label}</span>
                      </button>
@@ -403,7 +415,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onSave={setSettings} onExportData={() => {}} onImportData={() => {}} />
-        <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={a => setAgents(prev => [...prev, a])} agentToEdit={editingAgent} />
+        <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={handleSaveAgent} agentToEdit={editingAgent} />
         <TriggersModal isOpen={isTriggersOpen} onClose={() => setIsTriggersOpen(false)} onSelectPrompt={setInput} />
       </main>
     </div>

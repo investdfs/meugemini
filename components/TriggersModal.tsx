@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Search, Zap, ChevronRight, MessageSquareCode, Rocket, BarChart3, Briefcase } from 'lucide-react';
+import { X, Search, Zap, ChevronRight, Scale, GraduationCap, Briefcase } from 'lucide-react';
 import { COMMAND_LIBRARY } from '../constants';
 
 interface TriggersModalProps {
@@ -34,7 +34,7 @@ export const TriggersModal: React.FC<TriggersModalProps> = ({ isOpen, onClose, o
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Biblioteca de Comandos</h2>
-              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">Gatilhos Profissionais Avançados</p>
+              <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mt-0.5">Engenharia de Documentos</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-black dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-all">
@@ -61,8 +61,8 @@ export const TriggersModal: React.FC<TriggersModalProps> = ({ isOpen, onClose, o
           {filteredLibrary.length > 0 ? filteredLibrary.map((category, idx) => (
             <div key={idx} className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-black text-gray-500 uppercase tracking-[0.2em] px-1">
-                {category.category.includes("Marketing") ? <Rocket size={12}/> : 
-                 category.category.includes("Gestão") ? <Briefcase size={12}/> : <MessageSquareCode size={12}/>}
+                {category.category.includes("Jurídico") ? <Scale size={12}/> : 
+                 category.category.includes("Acadêmico") ? <GraduationCap size={12}/> : <Briefcase size={12}/>}
                 {category.category}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

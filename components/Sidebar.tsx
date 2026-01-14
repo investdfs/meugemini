@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { MessageSquare, Plus, Trash2, Menu, X, Settings, Bot, Search as SearchIcon, Edit2, Loader2 } from 'lucide-react';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { MessageSquare, Plus, Trash2, Menu, X, Settings, Search as SearchIcon, Edit2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ChatSession, Agent } from '../types';
 import { FuturisticLogo } from './FuturisticLogo';
 
@@ -20,6 +21,8 @@ interface SidebarProps {
   isGenerating?: boolean;
 }
 
+const ITEMS_PER_PAGE = 15;
+
 export const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   toggleSidebar,
@@ -37,6 +40,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isGenerating = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Resetar para página 1 quando a busca muda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const filteredSessions = useMemo(() => {
     if (!searchQuery.trim()) return sessions;
@@ -46,6 +55,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       s.messages.some(m => m.text.toLowerCase().includes(q))
     );
   }, [sessions, searchQuery]);
+
+  // Lógica de Paginação
+  const totalPages = Math.ceil(filteredSessions.length / ITEMS_PER_PAGE);
+  
+  const paginatedSessions = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredSessions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSessions, currentPage]);
 
   const groupedSessions = useMemo(() => {
     const groups: { [key: string]: ChatSession[] } = {
@@ -62,7 +79,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const last7Days = today - (86400000 * 7);
     const last30Days = today - (86400000 * 30);
 
-    filteredSessions.forEach(session => {
+    // Usamos paginatedSessions aqui para agrupar apenas o que está visível na página
+    paginatedSessions.forEach(session => {
       const date = session.updatedAt;
       if (date >= today) groups['Hoje'].push(session);
       else if (date >= yesterday) groups['Ontem'].push(session);
@@ -72,7 +90,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
 
     return groups;
-  }, [filteredSessions]);
+  }, [paginatedSessions]);
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(p => p - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(p => p + 1);
+  };
 
   return (
     <>
@@ -137,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-6 custom-scrollbar flex flex-col">
           <div className="space-y-1">
              <div className="px-3 py-1 flex items-center justify-between">
                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Agentes Customizados</span>
@@ -154,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div 
                   key={agent.id}
                   onClick={() => onNewAgentChat(agent.id)}
-                  className="group flex flex-col px-3 py-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#282a2c] text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-all mb-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-800"
+                  className="group relative flex flex-col px-3 py-2.5 rounded-2xl cursor-pointer hover:bg-gray-100 dark:hover:bg-[#282a2c] text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-all mb-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-800"
                 >
                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -174,11 +200,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                       </div>
                    </div>
+
+                   {/* Agent Actions */}
+                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-black/50 backdrop-blur-sm rounded-lg p-0.5">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onOpenAgentModal(agent); }}
+                        className="p-1.5 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        title="Editar Agente"
+                      >
+                         <Edit2 size={12} />
+                      </button>
+                      <button 
+                        onClick={(e) => onDeleteAgent(agent.id, e)}
+                        className="p-1.5 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        title="Excluir Agente"
+                      >
+                         <Trash2 size={12} />
+                      </button>
+                   </div>
                 </div>
               ))}
           </div>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-4 pt-2 flex-1">
             {Object.entries(groupedSessions).map(([groupName, groupSessions]) => {
               const sessions = groupSessions as ChatSession[];
               if (sessions.length === 0) return null;
@@ -223,6 +267,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
               );
             })}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-4 py-2 flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-white/5">
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                {currentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1e1f20]">

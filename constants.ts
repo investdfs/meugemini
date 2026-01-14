@@ -1,3 +1,4 @@
+
 import { ModelId, ModelOption } from './types';
 
 export const AVAILABLE_MODELS: ModelOption[] = [
@@ -35,57 +36,56 @@ export const AVAILABLE_MODELS: ModelOption[] = [
 
 export const DEFAULT_MODEL = ModelId.GeminiFlash;
 export const DEFAULT_PROVIDER = 'google';
-export const DEFAULT_AI_NAME = "Gemini";
+export const DEFAULT_AI_NAME = "Gemini Docs";
 
-export const WELCOME_MESSAGE_TEMPLATE = "Olá! Eu sou o {name}. Como posso ajudar você hoje?";
+export const WELCOME_MESSAGE_TEMPLATE = "Olá! Sou o {name}. Qual documento vamos redigir hoje?";
 
 export const PROFESSIONAL_STARTERS = [
   {
-    id: 'pdf',
-    label: 'Analisar PDF',
-    icon: 'FileText',
-    prompt: "Atue como um analista de documentos especialista. Analise o arquivo PDF anexo, realize uma leitura crítica e forneça: 1) Um resumo executivo de 3 parágrafos, 2) Os 5 pontos mais importantes em tópicos, 3) Identificação de possíveis inconsistências ou riscos e 4) Três recomendações práticas baseadas no conteúdo."
+    id: 'doc_analysis',
+    label: 'Análise Jurídica',
+    prompt: "Atue como um Consultor Jurídico Sênior. Analise o documento em anexo (ou o texto que colarei a seguir) em busca de cláusulas abusivas, riscos contratuais ocultos e ambiguidades. Forneça um parecer técnico estruturado em: 1) Resumo do Objeto, 2) Pontos de Atenção Crítica (Riscos), 3) Sugestões de Redação para Mitigação e 4) Conclusão sobre a viabilidade da assinatura."
   },
   {
-    id: 'code',
-    label: 'Gerar Código',
-    icon: 'Code',
-    prompt: "Atue como um Engenheiro de Software Sênior. Desenvolva uma solução robusta, limpa e performática para o problema descrito a seguir. Utilize as melhores práticas de Clean Code, SOLID e padrões de projeto modernos. Explique brevemente a lógica utilizada e inclua comentários claros no código.\n\nPROBLEMA: [DESCREVA AQUI]"
+    id: 'doc_contract',
+    label: 'Minuta de Contrato',
+    prompt: "Atue como um Especialista em Contratos Corporativos. Redija uma minuta completa e robusta para um [TIPO DE CONTRATO, EX: PRESTAÇÃO DE SERVIÇOS DE DESENVOLVIMENTO]. Inclua cláusulas essenciais de: Objeto, Obrigações das Partes, Confidencialidade (NDA), Propriedade Intelectual, Vigência, Rescisão, LGPD e Foro. Utilize linguagem formal, precisa e juridicamente segura."
   },
   {
-    id: 'web',
-    label: 'Pesquisa Web',
-    icon: 'Globe',
-    prompt: "Utilize a pesquisa web para compilar as informações mais recentes, tendências e dados estatísticos atualizados sobre [ASSUNTO]. Organize a resposta comparando diferentes fontes confiáveis, destaque contradições se houver, e termine com uma análise de tendência para os próximos 12 meses."
+    id: 'doc_structure',
+    label: 'Estruturar Artigo',
+    prompt: "Atue como um Editor Chefe Acadêmico. Crie a estrutura detalhada (esqueleto) para um artigo técnico/científico sobre [TEMA]. A estrutura deve conter: Título Sugerido, Abstract (pontos chave), Introdução (contexto e tese), Desenvolvimento (divido em 3 subtópicos com argumentos principais para cada), Metodologia Sugerida e Conclusão. O objetivo é publicar em [PÚBLICO ALVO/REVISTA]."
   },
   {
-    id: 'translate',
-    label: 'Traduzir Texto',
-    icon: 'Languages',
-    prompt: "Atue como um tradutor e intérprete nativo profissional. Traduza o texto abaixo preservando fielmente o tom, as nuances culturais e as intenções do autor original. Adapte termos técnicos para o contexto local sem perder a precisão. \n\nTEXTO: [COLE AQUI]\nPARA O IDIOMA: [QUAL IDIOMA?]"
+    id: 'doc_formal',
+    label: 'Reescrita Executiva',
+    prompt: "Atue como um Assessor de Comunicação Executiva. Reescreva o texto abaixo elevando o tom para uma linguagem extremamente profissional, polida e persuasiva, adequada para ser enviada a um CEO ou Conselho de Administração. Elimine repetições, melhore a coesão e utilize vocabulário de alto nível corporativo.\n\nTEXTO ORIGINAL: [COLE AQUI]"
   }
 ];
 
 export const COMMAND_LIBRARY = [
   {
-    category: "Marketing & Vendas",
+    category: "Jurídico & Contratos",
     items: [
-      { title: "Criar Copy de Anúncio", prompt: "Crie uma copy de alta conversão para Facebook/Instagram Ads utilizando o framework AIDA (Atenção, Interesse, Desejo, Ação) para o produto: [PRODUTO]. Foco em [PÚBLICO ALVO]." },
-      { title: "Calendário de Conteúdo", prompt: "Gere um calendário de conteúdo para 30 dias para o Instagram de uma empresa de [NICHO]. Inclua sugestão de legenda, tipo de post (Reels, Carrossel, Foto) e 5 hashtags estratégicas por post." }
+      { title: "Contrato de Prestação de Serviços", prompt: "Redija um contrato de prestação de serviços entre [CONTRATANTE] e [CONTRATADA] para o serviço de [DESCREVER SERVIÇO]. Inclua cláusulas de pagamento, prazos, multa por atraso e confidencialidade." },
+      { title: "Notificação Extrajudicial", prompt: "Elabore uma Notificação Extrajudicial formal para cobrança de valores em atraso referentes a [DESCREVER DÍVIDA]. O tom deve ser firme, porém respeitoso, citando o Código Civil Brasileiro quando pertinente." },
+      { title: "Termo de Confidencialidade (NDA)", prompt: "Crie um Termo de Confidencialidade (NDA) unilateral para proteger informações sensíveis sobre [PROJETO/INFORMAÇÃO] que serão compartilhadas com um prestador de serviços." }
     ]
   },
   {
-    category: "Produtividade & Gestão",
+    category: "Corporativo & Administrativo",
     items: [
-      { title: "Resumir Reunião", prompt: "Com base na transcrição da reunião abaixo, organize: 1) Decisões tomadas, 2) Tarefas atribuídas com respectivos responsáveis, 3) Próximos passos e 4) Data da próxima verificação.\n\nTRANSCRICAO: [COLE AQUI]" },
-      { title: "Priorização de Tarefas", prompt: "Utilize a Matriz de Eisenhower para classificar e priorizar a seguinte lista de tarefas. Explique o porquê da classificação de cada uma.\n\nLISTA: [COLE AQUI]" }
+      { title: "Ata de Reunião Formal", prompt: "Com base nas anotações abaixo, redija uma Ata de Reunião formal. Estruture com: Data/Hora, Presentes, Pauta, Deliberações (Decisões tomadas), Responsáveis por Ações (Action Items) e Prazos.\n\nANOTAÇÕES: [COLE AQUI]" },
+      { title: "Memorando Executivo", prompt: "Escreva um Memorando interno para comunicar [MUDANÇA/NOVA POLÍTICA] a todos os colaboradores. Utilize uma linguagem clara, objetiva e motivadora, explicando os motivos e os benefícios da mudança." },
+      { title: "Proposta Comercial", prompt: "Desenvolva uma estrutura de Proposta Comercial persuasiva para o cliente [NOME]. Inclua: Resumo Executivo, Entendimento do Problema, Nossa Solução, Metodologia, Cronograma, Investimento e Termos." }
     ]
   },
   {
-    category: "Programação",
+    category: "Acadêmico & Editorial",
     items: [
-      { title: "Refatorar Código", prompt: "Analise o código abaixo e sugira melhorias de legibilidade, performance e segurança. Reescreva o código aplicando as melhorias sugeridas.\n\nCODIGO: [COLE AQUI]" },
-      { title: "Criar Testes Unitários", prompt: "Gere testes unitários abrangentes para a função abaixo utilizando [FRAMEWORK, ex: Jest/Pytest]. Garanta a cobertura de casos de borda (edge cases) e entradas inválidas.\n\nFUNCAO: [COLE AQUI]" }
+      { title: "Resumo Expandido (Abstract)", prompt: "Gere um Resumo Expandido acadêmico sobre o texto anexo. O resumo deve conter: Objetivo, Metodologia, Resultados e Conclusões, respeitando a norma culta e limite de 500 palavras." },
+      { title: "Revisão Bibliográfica", prompt: "Atue como pesquisador. Sugira 5 a 10 referências bibliográficas seminais e atuais sobre o tema [TEMA]. Para cada referência, escreva um breve parágrafo explicando sua relevância para o estudo." },
+      { title: "Converter Tópicos em Texto", prompt: "Transforme a lista de tópicos abaixo em um texto corrido, coeso e bem articulado, utilizando conectivos variados para garantir fluidez na leitura.\n\nTÓPICOS: [COLE AQUI]" }
     ]
   }
 ];
