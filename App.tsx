@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Menu, Paperclip, X, Zap, FileText, AlertCircle, Sun, Moon, Database, Search, Layout, Columns, Lock, Play, Loader2, ScanSearch } from 'lucide-react';
+import { Send, Menu, Paperclip, X, Zap, FileText, AlertCircle, Sun, Moon, Database, Search, Layout, Columns, Lock, Play, Loader2, ScanSearch, Image as ImageIcon, Sparkles } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import LZString from 'lz-string';
 
@@ -19,7 +19,7 @@ import { RagService } from './services/ragService';
 import { SecurityService } from './services/securityService';
 import { OcrService } from './services/ocrService';
 import { ChatSession, Message, AppSettings, Attachment, Agent, KnowledgeChunk } from './types';
-import { DEFAULT_MODEL, WELCOME_MESSAGE_TEMPLATE, DEFAULT_AI_NAME, PROFESSIONAL_STARTERS } from './constants';
+import { DEFAULT_MODEL, WELCOME_MESSAGE_TEMPLATE, DEFAULT_AI_NAME, PROFESSIONAL_STARTERS, DEFAULT_DIEX_AGENT } from './constants';
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
 
@@ -27,30 +27,14 @@ try {
   pdfjs.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs`;
 } catch (e) {}
 
-const extractTextFromPdf = async (base64: string): Promise<string> => {
-  try {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const loadingTask = pdfjs.getDocument({ data: bytes });
-    const pdf = await loadingTask.promise;
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      fullText += textContent.items.map((item: any) => item.str).join(' ') + '\n';
-    }
-    return fullText;
-  } catch (err) { return ""; }
-};
-
 const App: React.FC = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [masterPassword, setMasterPassword] = useState<string | null>(null);
+  const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>({
-    provider: 'google',
+    provider: 'openrouter',
     modelId: DEFAULT_MODEL,
     systemInstruction: '',
     googleSearchEnabled: false,
@@ -61,9 +45,7 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTriggersOpen, setIsTriggersOpen] = useState(false);
 
-  const [ocrProcessing, setOcrProcessing] = useState<{ [key: string]: number }>({});
-
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([DEFAULT_DIEX_AGENT]);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -73,13 +55,16 @@ const App: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<(Attachment & { extractedText?: string, isOcr?: boolean })[]>([]);
   const [knowledgeBase, setKnowledgeBase] = useState<KnowledgeChunk[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [initError, setInitError] = useState<string | null>(null);
-  const [showWelcome, setShowWelcome] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const geminiService = useRef<GeminiService>(new GeminiService());
+
+  const currentSession = sessions.find(s => s.id === currentSessionId);
+  const currentAgent = agents.find(a => a.id === currentSession?.agentId);
+  const messages = currentSession ? currentSession.messages : [];
+  const editorContent = currentSession?.editorContent || "";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,20 +78,6 @@ const App: React.FC = () => {
     }
   }, [input]);
 
-  const hasAnyApiKey = !!(settings.googleApiKey || settings.openRouterApiKey || settings.openaiApiKey || 
-                        settings.anthropicApiKey || settings.deepseekApiKey || settings.groqApiKey || settings.mistralApiKey || settings.xaiApiKey);
-  
-  const isCurrentProviderActive = (
-    (settings.provider === 'google' && settings.googleApiKey) ||
-    (settings.provider === 'openai' && settings.openaiApiKey) ||
-    (settings.provider === 'anthropic' && settings.anthropicApiKey) ||
-    (settings.provider === 'deepseek' && settings.deepseekApiKey) ||
-    (settings.provider === 'groq' && settings.groqApiKey) ||
-    (settings.provider === 'mistral' && settings.mistralApiKey) ||
-    (settings.provider === 'openrouter' && settings.openRouterApiKey) ||
-    (settings.provider === 'xai' && settings.xaiApiKey)
-  );
-
   useEffect(() => {
     if (settings.theme === 'dark') document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
@@ -119,16 +90,17 @@ const App: React.FC = () => {
   useEffect(() => {
     try {
       const vaultData = localStorage.getItem('gemini-vault-v1');
+      const savedSettings = localStorage.getItem('gemini-settings-v2');
+      
       if (vaultData) {
         setIsLocked(true);
-      } else {
-        const savedSettings = localStorage.getItem('gemini-settings-v2');
-        if (savedSettings) {
-          const decompressed = LZString.decompress(savedSettings);
-          if (decompressed) {
-            setSettings(prev => ({ ...prev, ...JSON.parse(decompressed) }));
-          }
+      } else if (savedSettings) {
+        const decompressed = LZString.decompress(savedSettings);
+        if (decompressed) {
+          setSettings(prev => ({ ...prev, ...JSON.parse(decompressed) }));
         }
+      } else {
+        setIsWelcomeModalOpen(true);
       }
 
       const savedSessions = localStorage.getItem('gemini-sessions-v2');
@@ -147,10 +119,14 @@ const App: React.FC = () => {
       const savedAgents = localStorage.getItem('gemini-agents-v2');
       if (savedAgents) {
         const decompressed = LZString.decompress(savedAgents);
-        if (decompressed) setAgents(JSON.parse(decompressed));
+        if (decompressed) {
+          const parsedAgents = JSON.parse(decompressed);
+          if (parsedAgents.length === 0) setAgents([DEFAULT_DIEX_AGENT]);
+          else setAgents(parsedAgents);
+        }
       }
     } catch (e) {
-      setInitError("Erro ao restaurar sessão.");
+      console.error("Erro ao restaurar sessão.");
     }
   }, []);
 
@@ -166,6 +142,16 @@ const App: React.FC = () => {
     } else {
       setUnlockError("Senha Incorreta");
     }
+  };
+
+  const handleSelectFreeMode = () => {
+    setSettings(prev => ({
+      ...prev,
+      provider: 'openrouter',
+      modelId: DEFAULT_MODEL,
+      openRouterApiKey: ''
+    }));
+    setIsWelcomeModalOpen(false);
   };
 
   useEffect(() => {
@@ -195,15 +181,11 @@ const App: React.FC = () => {
   
   useEffect(() => { scrollToBottom(); }, [sessions, currentSessionId]);
 
-  const currentSession = sessions.find(s => s.id === currentSessionId);
-  const currentAgent = agents.find(a => a.id === currentSession?.agentId);
-  const messages = currentSession ? currentSession.messages : [];
-  const editorContent = currentSession?.editorContent || "";
-
   const createNewSession = (agentId?: string) => {
+    const agent = agents.find(a => a.id === agentId);
     const newSession: ChatSession = { 
       id: generateId(), 
-      title: 'Nova conversa', 
+      title: agent ? agent.name : 'Nova conversa', 
       messages: [], 
       updatedAt: Date.now(), 
       agentId,
@@ -216,43 +198,7 @@ const App: React.FC = () => {
     setInput('');
   };
 
-  const handlePushToEditor = (text: string) => {
-    if (!currentSessionId) return;
-    setSessions(prev => prev.map(s => 
-      s.id === currentSessionId ? { ...s, editorContent: text } : s
-    ));
-    if (!settings.isSplitViewEnabled) {
-      setSettings(prev => ({ ...prev, isSplitViewEnabled: true }));
-    }
-  };
-
-  const updateEditorContent = (newContent: string) => {
-    if (!currentSessionId) return;
-    setSessions(prev => prev.map(s => 
-      s.id === currentSessionId ? { ...s, editorContent: newContent } : s
-    ));
-  };
-
-  const handleDeleteAgent = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm("Deseja realmente excluir este agente?")) {
-      setAgents(prev => prev.filter(a => a.id !== id));
-    }
-  };
-
-  const handleSaveAgent = (agent: Agent) => {
-    setAgents(prev => {
-      const exists = prev.find(a => a.id === agent.id);
-      if (exists) {
-        return prev.map(a => a.id === agent.id ? agent : a);
-      }
-      return [agent, ...prev];
-    });
-  };
-
   const handleSendMessage = async () => {
-    if (!hasAnyApiKey) { setShowWelcome(true); return; }
-    if (!isCurrentProviderActive) { setIsSettingsOpen(true); return; }
     if ((!input.trim() && selectedFiles.length === 0) || isGenerating) return;
     
     setIsGenerating(true);
@@ -271,11 +217,7 @@ const App: React.FC = () => {
 
     try {
       const history = currentSession?.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })) || [];
-      const apiKeys = {
-        google: settings.googleApiKey, openRouter: settings.openRouterApiKey, openai: settings.openaiApiKey,
-        anthropic: settings.anthropicApiKey, deepseek: settings.deepseekApiKey, groq: settings.groqApiKey,
-        mistral: settings.mistralApiKey, xai: settings.xaiApiKey
-      };
+      const apiKeys = { openRouter: settings.openRouterApiKey, openai: settings.openaiApiKey, deepseek: settings.deepseekApiKey, groq: settings.groqApiKey };
 
       if (history.length === 0) {
         geminiService.current.generateTitle(userMsg.text, settings.provider, apiKeys).then(t => 
@@ -283,8 +225,11 @@ const App: React.FC = () => {
         );
       }
 
+      // PRIORIDADE: Instrução do Agente Ativo > Configurações Gerais
       let systemPrompt = settings.systemInstruction || '';
-      if (currentAgent) systemPrompt += `\nPersonalidade do Agente: ${currentAgent.systemInstruction}`;
+      if (currentAgent) {
+        systemPrompt = `VOCÊ É O AGENTE: ${currentAgent.name.toUpperCase()}\n\nINSTRUÇÕES DE PERSONALIDADE E COMPORTAMENTO:\n${currentAgent.systemInstruction}\n\nREGRAS ADICIONAIS:\n${settings.systemInstruction}`;
+      }
       
       const stream = geminiService.current.streamChat(settings.provider, settings.modelId, history, promptWithContext, [], systemPrompt, settings.googleSearchEnabled, apiKeys);
 
@@ -304,57 +249,6 @@ const App: React.FC = () => {
     } finally { setIsGenerating(false); setTimeout(() => inputRef.current?.focus(), 100); }
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files) as File[];
-      
-      const newAtts = await Promise.all(files.map(async file => {
-        const fileId = generateId();
-        const base64 = await new Promise<string>((res) => {
-          const reader = new FileReader();
-          reader.onload = () => res((reader.result as string).split(',')[1]);
-          reader.readAsDataURL(file);
-        });
-        
-        let extractedText = "";
-        let isOcr = false;
-
-        if (file.type === 'application/pdf') {
-          extractedText = await extractTextFromPdf(base64);
-          
-          if (extractedText.trim().length < 50) {
-             setOcrProcessing(prev => ({ ...prev, [fileId]: 0.1 }));
-             extractedText = await OcrService.recognizeScannedPdf(base64, (p) => {
-                setOcrProcessing(prev => ({ ...prev, [fileId]: p }));
-             });
-             setOcrProcessing(prev => { const n = { ...prev }; delete n[fileId]; return n; });
-             isOcr = true;
-          }
-        } else if (file.type.startsWith('image/')) {
-          setOcrProcessing(prev => ({ ...prev, [fileId]: 0.1 }));
-          extractedText = await OcrService.recognizeImage(base64, (p) => {
-             setOcrProcessing(prev => ({ ...prev, [fileId]: p }));
-          });
-          setOcrProcessing(prev => { const n = { ...prev }; delete n[fileId]; return n; });
-          isOcr = true;
-        } else if (file.type === 'text/plain') {
-          extractedText = atob(base64);
-        }
-
-        if (extractedText) {
-          const chunks = RagService.createChunks(extractedText, fileId, file.name);
-          setKnowledgeBase(prev => [...prev, ...chunks]);
-        }
-
-        return { id: fileId, mimeType: file.type, fileName: file.name, data: base64, extractedText, isOcr };
-      }));
-
-      setSelectedFiles(prev => [...prev, ...newAtts]);
-    }
-  };
-
-  if (isLocked) return <MasterPasswordModal onUnlock={handleUnlock} error={unlockError} />;
-
   return (
     <div className="flex h-screen bg-soft-bg dark:bg-gemini-dark text-slate-800 dark:text-white overflow-hidden transition-colors duration-300">
       <Sidebar 
@@ -363,7 +257,7 @@ const App: React.FC = () => {
         onSelectSession={setCurrentSessionId} onNewChat={() => createNewSession()} onNewAgentChat={createNewSession}
         onDeleteSession={(id, e) => { e.stopPropagation(); setSessions(prev => prev.filter(s => s.id !== id)); if(currentSessionId === id) setCurrentSessionId(null); }}
         onOpenSettings={() => setIsSettingsOpen(true)} onOpenAgentModal={(a) => { setEditingAgent(a || null); setIsAgentModalOpen(true); }}
-        onDeleteAgent={handleDeleteAgent}
+        onDeleteAgent={(id, e) => { e.stopPropagation(); setAgents(prev => prev.filter(a => a.id !== id)); }}
         aiDisplayName={settings.aiDisplayName}
         isGenerating={isGenerating}
       />
@@ -372,7 +266,27 @@ const App: React.FC = () => {
           <header className="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-white/5 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md z-10 shrink-0 transition-colors duration-300">
             <div className="flex items-center gap-3">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all"><Menu size={18} /></button>
-              <ModelSelector settings={settings} onUpdateSettings={(s) => setSettings(prev => ({...prev, ...s}))} onOpenSettings={() => setIsSettingsOpen(true)} />
+              
+              {currentAgent ? (
+                <div className="flex items-center gap-2.5 px-3 py-1 bg-white/50 dark:bg-white/5 rounded-full border border-gray-200 dark:border-white/5 shadow-sm">
+                   <div 
+                    className="w-6 h-6 rounded-lg flex items-center justify-center text-xs shadow-inner"
+                    style={{ backgroundColor: currentAgent.themeColor || '#3b82f6', color: 'white' }}
+                   >
+                     {currentAgent.avatar && currentAgent.avatar.startsWith('data:image') ? (
+                       <img src={currentAgent.avatar} alt="av" className="w-full h-full object-cover rounded-lg" />
+                     ) : (
+                       <span>{currentAgent.avatar || '🤖'}</span>
+                     )}
+                   </div>
+                   <div className="flex flex-col leading-none">
+                     <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{currentAgent.name}</span>
+                     <span className="text-[8px] text-blue-500 font-bold uppercase tracking-widest">Agente Ativo</span>
+                   </div>
+                </div>
+              ) : (
+                <ModelSelector settings={settings} onUpdateSettings={(s) => setSettings(prev => ({...prev, ...s}))} onOpenSettings={() => setIsSettingsOpen(true)} />
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button 
@@ -392,11 +306,29 @@ const App: React.FC = () => {
             <div className={`max-w-3xl mx-auto min-h-full flex flex-col ${settings.isSplitViewEnabled ? 'px-2' : ''}`}>
               {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-6">
-                  <div className="float-animation mb-6"><FuturisticLogo size={60} isProcessing={isGenerating} /></div>
+                  <div className="float-animation mb-6">
+                    {currentAgent ? (
+                      <div 
+                        className="w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl animate-pulse"
+                        style={{ backgroundColor: currentAgent.themeColor || '#3b82f6', color: 'white' }}
+                      >
+                         {currentAgent.avatar && currentAgent.avatar.startsWith('data:image') ? (
+                           <img src={currentAgent.avatar} alt="av" className="w-full h-full object-cover rounded-[2rem]" />
+                         ) : (
+                           <span className="text-4xl">{currentAgent.avatar || '🤖'}</span>
+                         )}
+                      </div>
+                    ) : (
+                      <FuturisticLogo size={60} isProcessing={isGenerating} />
+                    )}
+                  </div>
                   <h1 className="text-2xl font-black mb-1 bg-gradient-to-r from-blue-600 via-violet-600 to-cyan-600 dark:from-blue-400 dark:via-violet-400 dark:to-cyan-400 bg-clip-text text-transparent text-center tracking-tight px-4">
-                    {WELCOME_MESSAGE_TEMPLATE.replace("{name}", settings.aiDisplayName)}
+                    {currentAgent ? `Olá, eu sou o ${currentAgent.name}` : WELCOME_MESSAGE_TEMPLATE.replace("{name}", settings.aiDisplayName)}
                   </h1>
-                  <p className="text-gray-500 dark:text-gray-600 text-[10px] max-w-xs text-center leading-relaxed font-black uppercase tracking-[0.3em] mb-10">Engenharia de Documentos</p>
+                  <p className="text-gray-500 dark:text-gray-600 text-[10px] max-w-xs text-center leading-relaxed font-black uppercase tracking-[0.3em] mb-10">
+                    {currentAgent ? currentAgent.description : 'Engenharia de Documentos e IA Multimodal'}
+                  </p>
+                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl px-4">
                      {PROFESSIONAL_STARTERS.map(starter => (
                        <button key={starter.id} onClick={() => setInput(starter.prompt)} className="px-4 py-3 rounded-2xl bg-soft-card dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all flex flex-col gap-1 group shadow-sm text-left">
@@ -405,16 +337,11 @@ const App: React.FC = () => {
                        </button>
                      ))}
                   </div>
-                  <div className="flex gap-4 mt-8">
-                    <button onClick={() => setIsTriggersOpen(true)} className="text-[10px] font-black text-gray-400 dark:text-gray-600 hover:text-blue-500 uppercase tracking-[0.25em] transition-all flex items-center gap-2 group">
-                      <Zap size={10} className="group-hover:animate-pulse" /> Ver Biblioteca de Prompts
-                    </button>
-                  </div>
                 </div>
               ) : (
                 <div className="flex-1 space-y-4 pb-12">
                   {messages.map((m, idx) => (
-                    <MessageBubble key={m.id} message={m} isAgentContext={!!currentAgent} themeColor={currentAgent?.themeColor} avatar={currentAgent?.avatar} isTyping={isGenerating && idx === messages.length - 1 && m.role === 'model'} onPushToEditor={handlePushToEditor} isSplitViewActive={settings.isSplitViewEnabled} />
+                    <MessageBubble key={m.id} message={m} isAgentContext={!!currentAgent} themeColor={currentAgent?.themeColor} avatar={currentAgent?.avatar} isTyping={isGenerating && idx === messages.length - 1 && m.role === 'model'} isSplitViewActive={settings.isSplitViewEnabled} onPushToEditor={(t) => setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, editorContent: t } : s))} />
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
@@ -424,40 +351,24 @@ const App: React.FC = () => {
 
           <div className="p-4 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md transition-colors duration-300">
             <div className="max-w-3xl mx-auto space-y-3">
-              <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-4">
-                  {selectedFiles.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                        {selectedFiles.map(file => (
-                          <div key={file.id} className="relative group bg-soft-surface dark:bg-white/10 rounded-xl p-2 border border-gray-200 dark:border-white/10 flex items-center gap-3 animate-message overflow-hidden">
-                            {ocrProcessing[file.id] !== undefined ? (
-                               <div className="flex items-center gap-2">
-                                  <Loader2 size={16} className="text-blue-500 animate-spin" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest">OCR {Math.round(ocrProcessing[file.id] * 100)}%</span>
-                               </div>
-                            ) : (
-                               <div className="flex items-center gap-3">
-                                  {file.isOcr ? <ScanSearch size={16} className="text-violet-500" /> : <FileText size={16} className="text-blue-600 dark:text-blue-400" />}
-                                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200 max-w-[120px] truncate">{file.fileName}</span>
-                                  <button onClick={() => { setSelectedFiles(prev => prev.filter(f => f.id !== file.id)); setKnowledgeBase(prev => prev.filter(c => c.fileId !== file.id)); }} className="text-gray-500 hover:text-red-500"><X size={14} /></button>
-                               </div>
-                            )}
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                  {knowledgeBase.length > 0 && (
-                    <div className="flex items-center gap-2 text-[10px] font-black text-blue-600/60 dark:text-blue-400/60 uppercase tracking-widest animate-pulse">
-                      <Database size={10} /> {knowledgeBase.length} Trechos Indexados
-                    </div>
-                  )}
-                </div>
-              </div>
-
               <div className={`flex items-end gap-3 glass rounded-[2rem] p-4 transition-all duration-500 border border-gray-200 dark:border-white/5 ${isGenerating ? 'opacity-50 pointer-events-none grayscale' : 'focus-within:border-blue-500/40 shadow-xl'}`}>
-                <input type="file" multiple ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept=".pdf,.txt,.png,.jpg,.jpeg" />
-                <button onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-400 hover:bg-black/5 rounded-2xl transition-all" title="Anexar Documentos ou Imagens para OCR"><Paperclip size={22} /></button>
-                <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())} placeholder="Pergunte ou anexe uma imagem para extração OCR..." className="w-full bg-transparent text-gray-900 dark:text-white py-3 outline-none resize-none min-h-[50px] text-sm placeholder-gray-400 px-2 custom-scrollbar" rows={1} />
+                <input type="file" multiple ref={fileInputRef} onChange={async (e) => {
+                  if (e.target.files) {
+                    const files = Array.from(e.target.files) as File[];
+                    const newAtts = await Promise.all(files.map(async (file: File) => {
+                      const base64 = await new Promise<string>(res => {
+                        const reader = new FileReader();
+                        reader.onload = () => res((reader.result as string).split(',')[1]);
+                        reader.readAsDataURL(file);
+                      });
+                      return { id: generateId(), mimeType: file.type, fileName: file.name, data: base64 };
+                    }));
+                    setSelectedFiles(prev => [...prev, ...newAtts]);
+                  }
+                }} className="hidden" accept=".pdf,.txt,.png,.jpg,.jpeg" />
+                <button onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-400 hover:bg-black/5 rounded-2xl transition-all" title="Anexar Arquivos"><Paperclip size={22} /></button>
+                <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())} placeholder={currentAgent ? `Pergunte ao ${currentAgent.name}...` : "Digite sua mensagem..."} className="w-full bg-transparent text-gray-900 dark:text-white py-3 outline-none resize-none min-h-[50px] text-sm placeholder-gray-400 px-2 custom-scrollbar" rows={1} />
+                
                 <button onClick={handleSendMessage} disabled={isGenerating || (!input.trim() && selectedFiles.length === 0)} className={`p-4 rounded-2xl transition-all mb-0.5 shrink-0 ${isGenerating || (!input.trim() && selectedFiles.length === 0) ? 'bg-soft-surface dark:bg-white/5 text-gray-400' : 'bg-gray-900 dark:bg-white text-white dark:text-black hover:scale-105 shadow-xl'}`}><Send size={22} /></button>
               </div>
             </div>
@@ -466,14 +377,14 @@ const App: React.FC = () => {
 
         {settings.isSplitViewEnabled && (
           <div className="w-1/2 h-full">
-            <DocumentEditor content={editorContent} onChange={updateEditorContent} onClear={() => updateEditorContent("")} theme={settings.theme} />
+            <DocumentEditor content={editorContent} onChange={(c) => setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, editorContent: c } : s))} onClear={() => setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, editorContent: "" } : s))} theme={settings.theme} />
           </div>
         )}
         
-        <WelcomeSetupModal isOpen={showWelcome} onClose={() => setShowWelcome(false)} onOpenSettings={() => { setShowWelcome(false); setIsSettingsOpen(true); }} />
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onSave={setSettings} masterPassword={masterPassword} onUpdateMasterPassword={setMasterPassword} />
-        <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={handleSaveAgent} agentToEdit={editingAgent} />
-        <TriggersModal isOpen={isTriggersOpen} onClose={() => setIsTriggersOpen(false)} onSelectPrompt={setInput} />
+        <WelcomeSetupModal isOpen={isWelcomeModalOpen} onClose={() => setIsWelcomeModalOpen(false)} onOpenSettings={() => { setIsWelcomeModalOpen(false); setIsSettingsOpen(true); }} onSelectFreeMode={handleSelectFreeMode} />
+        <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={(a) => { setAgents(prev => { const idx = prev.findIndex(item => item.id === a.id); if(idx !== -1) { const n = [...prev]; n[idx] = a; return n; } return [...prev, a]; }); }} agentToEdit={editingAgent} />
+        {isLocked && <MasterPasswordModal onUnlock={handleUnlock} error={unlockError} />}
       </main>
     </div>
   );
