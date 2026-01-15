@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Menu, Paperclip, X, Zap, FileText, AlertCircle, Sun, Moon, Database, Search, Layout, Columns, Lock, Play, Loader2, ScanSearch, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Send, Menu, Paperclip, X, Zap, FileText, AlertCircle, Sun, Moon, Database, Search, Layout, Columns, Lock, Play, Loader2, ScanSearch, Image as ImageIcon, Sparkles, ChevronDown, Check, UserPlus } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import LZString from 'lz-string';
 
@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [masterPassword, setMasterPassword] = useState<string | null>(null);
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false);
+  const [isAgentSelectorOpen, setIsAgentSelectorOpen] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>({
     provider: 'openrouter',
@@ -196,6 +197,12 @@ const App: React.FC = () => {
     setSelectedFiles([]);
     setKnowledgeBase([]);
     setInput('');
+    setIsAgentSelectorOpen(false); // Fecha o menu ao criar novo chat
+  };
+
+  const handleUpdateSessionAgent = (agentId?: string) => {
+    setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, agentId } : s));
+    setIsAgentSelectorOpen(false);
   };
 
   const handleSendMessage = async () => {
@@ -225,7 +232,6 @@ const App: React.FC = () => {
         );
       }
 
-      // PRIORIDADE: Instrução do Agente Ativo > Configurações Gerais
       let systemPrompt = settings.systemInstruction || '';
       if (currentAgent) {
         systemPrompt = `VOCÊ É O AGENTE: ${currentAgent.name.toUpperCase()}\n\nINSTRUÇÕES DE PERSONALIDADE E COMPORTAMENTO:\n${currentAgent.systemInstruction}\n\nREGRAS ADICIONAIS:\n${settings.systemInstruction}`;
@@ -254,7 +260,8 @@ const App: React.FC = () => {
       <Sidebar 
         isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
         sessions={sessions} agents={agents} currentSessionId={currentSessionId} 
-        onSelectSession={setCurrentSessionId} onNewChat={() => createNewSession()} onNewAgentChat={createNewSession}
+        onSelectSession={(id) => { setCurrentSessionId(id); setIsAgentSelectorOpen(false); }} 
+        onNewChat={() => createNewSession()} onNewAgentChat={createNewSession}
         onDeleteSession={(id, e) => { e.stopPropagation(); setSessions(prev => prev.filter(s => s.id !== id)); if(currentSessionId === id) setCurrentSessionId(null); }}
         onOpenSettings={() => setIsSettingsOpen(true)} onOpenAgentModal={(a) => { setEditingAgent(a || null); setIsAgentModalOpen(true); }}
         onDeleteAgent={(id, e) => { e.stopPropagation(); setAgents(prev => prev.filter(a => a.id !== id)); }}
@@ -263,38 +270,107 @@ const App: React.FC = () => {
       />
       <main className="flex-1 flex flex-row h-full relative">
         <div className={`flex flex-col h-full transition-all duration-500 ${settings.isSplitViewEnabled ? 'w-1/2' : 'w-full'}`}>
-          <header className="h-14 flex items-center justify-between px-6 border-b border-gray-200 dark:border-white/5 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md z-10 shrink-0 transition-colors duration-300">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all"><Menu size={18} /></button>
+          {/* Header sem overflow-hidden para permitir que o menu suspenda por cima do chat */}
+          <header className="h-14 flex items-center justify-between px-4 sm:px-6 border-b border-gray-200 dark:border-white/5 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md z-[100] shrink-0 transition-colors duration-300">
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all shrink-0"><Menu size={18} /></button>
               
-              {currentAgent ? (
-                <div className="flex items-center gap-2.5 px-3 py-1 bg-white/50 dark:bg-white/5 rounded-full border border-gray-200 dark:border-white/5 shadow-sm">
-                   <div 
-                    className="w-6 h-6 rounded-lg flex items-center justify-center text-xs shadow-inner"
-                    style={{ backgroundColor: currentAgent.themeColor || '#3b82f6', color: 'white' }}
-                   >
-                     {currentAgent.avatar && currentAgent.avatar.startsWith('data:image') ? (
-                       <img src={currentAgent.avatar} alt="av" className="w-full h-full object-cover rounded-lg" />
-                     ) : (
-                       <span>{currentAgent.avatar || '🤖'}</span>
-                     )}
-                   </div>
-                   <div className="flex flex-col leading-none">
-                     <span className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{currentAgent.name}</span>
-                     <span className="text-[8px] text-blue-500 font-bold uppercase tracking-widest">Agente Ativo</span>
-                   </div>
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="relative shrink-0">
+                  <button 
+                    onClick={() => setIsAgentSelectorOpen(!isAgentSelectorOpen)}
+                    className={`flex items-center gap-2 px-2 sm:px-3 py-1 rounded-full border transition-all shadow-sm ${currentAgent ? 'bg-white dark:bg-white/5 border-gray-200 dark:border-white/5' : 'bg-transparent border-transparent hover:bg-black/5 dark:hover:bg-white/5'}`}
+                  >
+                    <div 
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center text-[10px] sm:text-xs shadow-inner shrink-0"
+                      style={{ backgroundColor: currentAgent?.themeColor || '#64748b', color: 'white' }}
+                    >
+                      {currentAgent?.avatar && currentAgent.avatar.startsWith('data:image') ? (
+                        <img src={currentAgent.avatar} alt="av" className="w-full h-full object-cover rounded-lg" />
+                      ) : (
+                        <span>{currentAgent?.avatar || '🤖'}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col leading-none text-left min-w-0">
+                      <span className="text-[9px] sm:text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tight truncate max-w-[60px] sm:max-w-[100px]">
+                        {currentAgent ? currentAgent.name : 'Assistente'}
+                      </span>
+                      <span className={`text-[7px] sm:text-[8px] font-bold uppercase tracking-widest whitespace-nowrap ${currentAgent ? 'text-blue-500' : 'text-gray-400'}`}>
+                        {currentAgent ? 'Agente Ativo' : 'Sem Agente'}
+                      </span>
+                    </div>
+                    <ChevronDown size={12} className={`text-gray-400 transition-transform ${isAgentSelectorOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isAgentSelectorOpen && (
+                    <>
+                      <div className="fixed inset-0 z-[110]" onClick={() => setIsAgentSelectorOpen(false)} />
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-message z-[120]">
+                        <div className="p-3 bg-gray-50 dark:bg-[#282a2c] border-b border-gray-200 dark:border-white/5">
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selecionar Especialista</span>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                          <button 
+                            onClick={() => handleUpdateSessionAgent(undefined)}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${!currentAgent ? 'bg-blue-600/10 text-blue-600' : 'text-gray-500 hover:bg-black/5 dark:hover:bg-white/5'}`}
+                          >
+                             <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-white/5 flex items-center justify-center shrink-0">🤖</div>
+                             <div className="flex flex-col text-left">
+                               <span className="text-xs font-bold">Assistente Padrão</span>
+                               <span className="text-[9px] opacity-60 font-medium">Sem instruções específicas</span>
+                             </div>
+                             {!currentAgent && <Check size={14} className="ml-auto" />}
+                          </button>
+                          
+                          {agents.map(agent => (
+                            <button 
+                              key={agent.id}
+                              onClick={() => handleUpdateSessionAgent(agent.id)}
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all ${currentAgent?.id === agent.id ? 'bg-blue-600/10 text-blue-600' : 'text-gray-500 hover:bg-black/5 dark:hover:bg-white/5'}`}
+                            >
+                               <div 
+                                 className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white"
+                                 style={{ backgroundColor: agent.themeColor }}
+                               >
+                                 {agent.avatar?.startsWith('data:image') ? <img src={agent.avatar} className="w-full h-full object-cover rounded-lg" /> : agent.avatar}
+                               </div>
+                               <div className="flex flex-col text-left overflow-hidden">
+                                 <span className="text-xs font-bold truncate">{agent.name}</span>
+                                 <span className="text-[9px] opacity-60 font-medium truncate">{agent.description}</span>
+                               </div>
+                               {currentAgent?.id === agent.id && <Check size={14} className="ml-auto" />}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="p-2 border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-[#282a2c]">
+                          <button 
+                            onClick={() => { setIsAgentSelectorOpen(false); setIsAgentModalOpen(true); }}
+                            className="w-full py-2 flex items-center justify-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest hover:bg-blue-500/10 rounded-xl transition-all"
+                          >
+                            <UserPlus size={14} />
+                            Criar Novo Agente
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              ) : (
-                <ModelSelector settings={settings} onUpdateSettings={(s) => setSettings(prev => ({...prev, ...s}))} onOpenSettings={() => setIsSettingsOpen(true)} />
-              )}
+
+                <div className="h-6 w-px bg-gray-200 dark:bg-white/10 shrink-0 hidden sm:block" />
+                
+                <div className="min-w-0">
+                  <ModelSelector settings={settings} onUpdateSettings={(s) => setSettings(prev => ({...prev, ...s}))} onOpenSettings={() => setIsSettingsOpen(true)} />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+            
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <button 
                 onClick={() => setSettings(prev => ({ ...prev, isSplitViewEnabled: !prev.isSplitViewEnabled }))}
                 className={`p-2 rounded-lg transition-all flex items-center gap-2 ${settings.isSplitViewEnabled ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-black/5 dark:hover:bg-white/5'}`}
               >
                 <Columns size={18} />
-                <span className="text-[10px] font-black uppercase hidden sm:inline">Editor</span>
+                <span className="text-[10px] font-black uppercase hidden lg:inline">Editor</span>
               </button>
               <button onClick={toggleTheme} className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all">
                 {settings.theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -302,7 +378,7 @@ const App: React.FC = () => {
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar scroll-smooth">
+          <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar scroll-smooth" onClick={() => setIsAgentSelectorOpen(false)}>
             <div className={`max-w-3xl mx-auto min-h-full flex flex-col ${settings.isSplitViewEnabled ? 'px-2' : ''}`}>
               {messages.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-6">

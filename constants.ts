@@ -10,6 +10,9 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   { id: 'google/gemini-2.0-flash-lite-preview-02-05:free', name: 'Gemini 2.0 Flash Lite (Free)', description: 'O mais novo e rápido do Google via OpenRouter', provider: 'openrouter' },
   { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1 (Free)', description: 'Modelo de raciocínio de alto nível gratuito', provider: 'openrouter' },
   { id: 'mistralai/mistral-small-24b-instruct-2501:free', name: 'Mistral Small 24B (Free)', description: 'Eficiente e inteligente para tarefas médias', provider: 'openrouter' },
+  { id: 'xiaomi/mimo-v2-flash:free', name: 'Xiaomi Mimo-V2 Flash (Free)', description: 'Modelo ultra-rápido e eficiente da Xiaomi via OpenRouter', provider: 'openrouter' },
+  { id: 'mistralai/devstral-2512:free', name: 'Mistral Devstral 2512 (Free)', description: 'Modelo especializado em desenvolvimento e codificação', provider: 'openrouter' },
+  { id: 'tngtech/deepseek-r1t2-chimera:free', name: 'DeepSeek R1 Chimera (Free)', description: 'Híbrido de alto desempenho baseado em DeepSeek', provider: 'openrouter' },
 
   // --- GOOGLE ---
   { id: 'gemini-3-pro-preview', name: 'Gemini 3 Pro (Preview)', description: 'O modelo mais avançado e inteligente do Google', provider: 'google' },
@@ -95,7 +98,7 @@ Rio de Janeiro, RJ, 10 de março de 2026.
 **Assunto:** Situação atual de processos administrativos.
 
 1. Sobre o assunto, informo que os processos administrativos em trâmite nesta Organização Militar encontram-se devidamente instruídos e aguardando despacho final.
-2. Ademais, esclareço que não há pendências documentais até a presente data.
+2. Ademais, esclareço que não há pendências documentais Atas a presente data.
 3. Por fim, este assunto é de interesse da Seção Administrativa. Para maiores esclarecimentos, coloco à disposição o CAP João Silva, Chefe da Seção Administrativa, pelo RITEx XXXX-XXXX.
 
 Por ordem do Comandante da OM X.  
@@ -113,7 +116,7 @@ Brasília, DF, 5 de abril de 2026.
 **Ao** Sr Comandante da Região Militar Z  
 **Assunto:** Solicitação de providências administrativas.
 
-1. Sobre o assunto, informo que, após análise administrativa, verificou-se a necessidade de adoção de providências que extrapolam a competência desta Organização Militar.
+1. Sobre o assunto, informo que, após análise administrativa, verificou-se a necessidade de adoção de providências que extrapola a competência desta Organização Militar.
 2. Nesse contexto, solicito verificar a possibilidade desse Comando realizar gestões no sentido de autorizar as medidas administrativas necessárias.
 3. Por fim, este assunto é de interesse da Seção E1. Para esclarecimentos adicionais, coloco à disposição o MAJ Pedro Santos, Chefe da Seção E1, pelo RITEx XXXX-XXXX.
 
