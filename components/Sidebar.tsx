@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { MessageSquare, Plus, Trash2, Menu, X, Settings, Search as SearchIcon, Edit2, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Menu, X, Settings, Search as SearchIcon, Edit2, Loader2, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
 import { ChatSession, Agent } from '../types';
 import { FuturisticLogo } from './FuturisticLogo';
 
@@ -160,61 +160,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
+        {/* Histórico de Conversas */}
         <div className="flex-1 overflow-y-auto px-2 py-2 space-y-6 custom-scrollbar flex flex-col">
-          <div className="space-y-1">
-             <div className="px-3 py-1 flex items-center justify-between">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Agentes Customizados</span>
-                <button 
-                  onClick={() => onOpenAgentModal()}
-                  className="text-gray-400 hover:text-blue-500 transition-colors p-1"
-                >
-                  <Plus size={14} />
-                </button>
-             </div>
-             
-             {agents && agents.length > 0 && agents.map((agent) => (
-                <div 
-                  key={agent.id}
-                  onClick={() => onNewAgentChat(agent.id)}
-                  className="group relative flex flex-col px-3 py-2.5 rounded-2xl cursor-pointer hover:bg-white dark:hover:bg-[#282a2c] text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-all mb-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-800"
-                >
-                   <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div 
-                          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm text-white overflow-hidden"
-                          style={{ backgroundColor: agent.themeColor || '#3b82f6' }}
-                        >
-                           {agent.avatar && agent.avatar.startsWith('data:image') ? (
-                             <img src={agent.avatar} alt="av" className="w-full h-full object-cover" />
-                           ) : (
-                             <span className="text-lg">{agent.avatar || '🤖'}</span>
-                           )}
-                        </div>
-                        <div className="flex flex-col overflow-hidden">
-                          <span className="text-sm font-bold truncate">{agent.name}</span>
-                          <span className="text-[10px] text-gray-400 truncate">{agent.description}</span>
-                        </div>
-                      </div>
-                   </div>
-
-                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-black/50 backdrop-blur-sm rounded-lg p-0.5">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onOpenAgentModal(agent); }}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-black/5 transition-colors"
-                      >
-                         <Edit2 size={12} />
-                      </button>
-                      <button 
-                        onClick={(e) => onDeleteAgent(agent.id, e)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-black/5 transition-colors"
-                      >
-                         <Trash2 size={12} />
-                      </button>
-                   </div>
-                </div>
-              ))}
-          </div>
-
           <div className="space-y-4 pt-2 flex-1">
             {Object.entries(groupedSessions).map(([groupName, groupSessions]) => {
               const sessions = groupSessions as ChatSession[];
@@ -284,6 +231,71 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
           )}
+        </div>
+
+        {/* Agentes Customizados */}
+        <div className="px-2 pt-2 border-t border-gray-200 dark:border-white/5 bg-soft-surface/50 dark:bg-black/10">
+           <div className="px-3 py-1 flex items-center justify-between mb-1">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Agentes Customizados</span>
+              <button 
+                onClick={() => onOpenAgentModal()}
+                className="text-gray-400 hover:text-blue-500 transition-colors p-1"
+              >
+                <Plus size={14} />
+              </button>
+           </div>
+           
+           <div className="max-h-52 overflow-y-auto custom-scrollbar px-1 pb-2">
+             {agents && agents.length > 0 && agents.map((agent) => (
+                <div 
+                  key={agent.id}
+                  onClick={() => onNewAgentChat(agent.id)}
+                  className="group relative flex flex-col px-3 py-2 rounded-xl cursor-pointer hover:bg-white dark:hover:bg-[#282a2c] text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition-all mb-1 border border-transparent hover:border-gray-200 dark:hover:border-gray-800"
+                >
+                   <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm text-white overflow-hidden relative"
+                          style={{ backgroundColor: agent.themeColor || '#3b82f6' }}
+                        >
+                           {agent.avatar && agent.avatar.startsWith('data:image') ? (
+                             <img src={agent.avatar} alt="av" className="w-full h-full object-cover" />
+                           ) : (
+                             <span className="text-base">{agent.avatar || '🤖'}</span>
+                           )}
+                           {agent.notebookLmUrl && (
+                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border border-white dark:border-black flex items-center justify-center">
+                               <BrainCircuit size={8} className="text-white" />
+                             </div>
+                           )}
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                          <span className="text-xs font-bold truncate flex items-center gap-1">
+                            {agent.name}
+                            {agent.notebookLmUrl && <BrainCircuit size={10} className="text-blue-500" title="Possui Base NotebookLM" />}
+                          </span>
+                          <span className="text-[9px] text-gray-400 truncate leading-none mt-0.5">{agent.description}</span>
+                        </div>
+                      </div>
+                   </div>
+
+                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 dark:bg-black/50 backdrop-blur-sm rounded-lg p-0.5">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onOpenAgentModal(agent); }}
+                        className="p-1 text-gray-400 hover:text-blue-600 rounded-md hover:bg-black/5 transition-colors"
+                      >
+                         <Edit2 size={10} />
+                      </button>
+                      <button 
+                        onClick={(e) => onDeleteAgent(agent.id, e)}
+                        className="p-1 text-gray-400 hover:text-red-600 rounded-md hover:bg-black/5 transition-colors"
+                      >
+                         <Trash2 size={10} />
+                      </button>
+                   </div>
+                </div>
+              ))}
+           </div>
         </div>
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-soft-surface dark:bg-[#1e1f20]">

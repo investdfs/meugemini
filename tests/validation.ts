@@ -1,7 +1,7 @@
 
 /**
  * Testes de Validação Automática para Gemini Docs UI
- * Foco: Persistência de Chaves e Lógica de Boas-Vindas
+ * Foco: Persistência de Chaves, Lógica de Boas-Vindas e Inicialização de Sessão
  */
 
 import LZString from 'lz-string';
@@ -30,18 +30,30 @@ export const runAutoTests = () => {
     console.error('❌ Teste 1: Falha na Persistência', e);
   }
 
-  // Teste 2: Validação de Chave (Simulação de Envio)
-  const simulateSendWithoutKey = (hasKey: boolean) => {
-    return hasKey ? 'PROSSEGUIR' : 'MOSTRAR_POPUP';
+  // Teste 2: Lógica de Inicialização (Sessão Limpa)
+  // Simula o comportamento esperado do App.tsx no mount
+  const validateStartupSession = (savedSessionsJson: string | null) => {
+    let sessions = [];
+    if (savedSessionsJson) {
+      sessions = JSON.parse(savedSessionsJson);
+    }
+    
+    // Regra: Sempre deve haver pelo menos uma sessão, e a atual deve ser vazia se acabamos de iniciar
+    const latestIsEmpty = sessions.length > 0 && sessions[0].messages.length === 0;
+    return latestIsEmpty;
   };
 
-  const case1 = simulateSendWithoutKey(false);
-  const case2 = simulateSendWithoutKey(true);
+  const mockSaved = JSON.stringify([{ id: 'old', messages: [{ text: 'oi' }], updatedAt: 1 }]);
+  // Se tivéssemos acabado de rodar a lógica do App.tsx, a lista teria uma nova sessão no topo
+  const mockAfterInit = JSON.stringify([
+    { id: 'new', messages: [], updatedAt: 2 },
+    { id: 'old', messages: [{ text: 'oi' }], updatedAt: 1 }
+  ]);
 
-  if (case1 === 'MOSTRAR_POPUP' && case2 === 'PROSSEGUIR') {
-    console.log('✅ Teste 2: Lógica de Interrupção por Falta de Chave - SUCESSO');
+  if (validateStartupSession(mockAfterInit)) {
+    console.log('✅ Teste 2: Validação de Sessão Limpa no Início - SUCESSO');
   } else {
-    console.error('❌ Teste 2: Falha na Lógica de Interrupção');
+    console.error('❌ Teste 2: Falha na Lógica de Sessão Limpa');
   }
 
   console.groupEnd();

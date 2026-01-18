@@ -1,5 +1,4 @@
 
-
 export interface Attachment {
   id: string;
   mimeType: string;
@@ -37,6 +36,7 @@ export interface Agent {
   description: string;
   systemInstruction: string;
   driveFolderUrl: string; // Public link
+  notebookLmUrl?: string; // Link para NotebookLM
   createdAt: number;
   avatar?: string; // Emoji or Base64
   themeColor?: string; // Hex color
