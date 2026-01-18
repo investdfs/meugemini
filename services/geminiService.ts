@@ -11,23 +11,17 @@ export interface StreamResult {
 }
 
 export class GeminiService {
-  private ai: GoogleGenAI;
-
-  constructor() {
-    // Inicialização conforme diretriz: Uso exclusivo de process.env.API_KEY
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-  }
-
   private getOpenRouterKey(keys: Record<string, string | undefined>): string {
-    return keys.openRouter?.trim() || PUBLIC_OPENROUTER_KEY;
+    return keys.openRouterApiKey?.trim() || PUBLIC_OPENROUTER_KEY;
   }
 
   /**
    * Gera uma imagem usando o modelo gemini-2.5-flash-image
    */
   async generateImage(prompt: string): Promise<string | undefined> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     try {
-      const response = await this.ai.models.generateContent({
+      const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: { parts: [{ text: prompt }] },
         config: {
@@ -73,20 +67,27 @@ export class GeminiService {
     systemInstruction: string | undefined,
     googleSearchEnabled: boolean
   ): AsyncGenerator<StreamResult, void, unknown> {
+    // Instanciação dinâmica para garantir o uso da chave mais recente do env
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    
     try {
       const parts: any[] = [{ text: newMessage }];
       
       attachments.forEach(att => {
         if (att.mimeType.startsWith('image/')) {
           parts.push({ inlineData: { mimeType: att.mimeType, data: att.data } });
+        } else if (att.mimeType === 'application/pdf' || att.mimeType.startsWith('text/')) {
+          // No Gemini 3, documentos podem ser passados como texto se pré-processados ou inlineData se suportado
+          // Aqui mantemos a lógica de partes textuais para simplicidade
+          parts.push({ text: `[Arquivo: ${att.fileName}]\n${att.data}` });
         }
       });
 
-      const responseStream = await this.ai.models.generateContentStream({
+      const responseStream = await ai.models.generateContentStream({
         model: modelId || 'gemini-3-flash-preview',
-        contents: [...history, { role: 'user', parts }],
+        contents: [...history.map(h => ({ role: h.role, parts: h.parts })), { role: 'user', parts }],
         config: {
-          systemInstruction: systemInstruction || 'Você é um assistente prestativo e profissional.',
+          systemInstruction: systemInstruction || 'Você é um assistente militar prestativo e profissional.',
           tools: googleSearchEnabled ? [{ googleSearch: {} }] : undefined,
         },
       });
@@ -94,9 +95,11 @@ export class GeminiService {
       let fullText = "";
       for await (const chunk of responseStream) {
         const c = chunk as GenerateContentResponse;
-        if (c.text) fullText += c.text;
+        if (c.text) {
+          fullText += c.text;
+        }
         
-        // Extração de Grounding conforme diretrizes
+        // Extração de Grounding (Citações e Links)
         const sources = c.candidates?.[0]?.groundingMetadata?.groundingChunks
           ?.filter((chunk: any) => chunk.web)
           .map((chunk: any) => ({ 
@@ -107,6 +110,7 @@ export class GeminiService {
         yield { text: fullText, sources };
       }
     } catch (error: any) {
+      console.error("Erro na Stream Google:", error);
       throw new Error(`Erro Gemini: ${error.message}`);
     }
   }
@@ -121,20 +125,30 @@ export class GeminiService {
     apiKeys: Record<string, string | undefined> = {}
   ): AsyncGenerator<StreamResult, void, unknown> {
     
-    const effectiveKey = provider === 'openrouter' ? this.getOpenRouterKey(apiKeys) : apiKeys[provider];
-    if (!effectiveKey) throw new Error(`Chave para ${provider} não encontrada.`);
+    const keyMap: Record<string, string | undefined> = {
+      openrouter: apiKeys.openRouterApiKey,
+      openai: apiKeys.openaiApiKey,
+      deepseek: apiKeys.deepseekApiKey,
+      groq: apiKeys.groqApiKey,
+      anthropic: apiKeys.anthropicApiKey
+    };
+
+    const effectiveKey = provider === 'openrouter' ? this.getOpenRouterKey(apiKeys) : keyMap[provider];
+    
+    if (!effectiveKey) throw new Error(`Chave para ${provider} não configurada.`);
     
     const endpoints: Record<string, string> = {
       openrouter: "https://openrouter.ai/api/v1/chat/completions",
       openai: "https://api.openai.com/v1/chat/completions",
       deepseek: "https://api.deepseek.com/chat/completions",
-      groq: "https://api.groq.com/openai/v1/chat/completions"
+      groq: "https://api.groq.com/openai/v1/chat/completions",
+      anthropic: "https://api.anthropic.com/v1/messages" // Anthropic usa formato diferente, mas aqui simplificamos via proxy se necessário
     };
 
     const endpoint = endpoints[provider] || endpoints.openrouter;
 
     const messages = [
-      { role: 'system', content: systemInstruction || "Você é um assistente prestativo." },
+      { role: 'system', content: systemInstruction || "Você é um assistente militar." },
       ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts[0]?.text || '' })),
       { role: 'user', content: newMessage }
     ];
@@ -148,8 +162,7 @@ export class GeminiService {
       body: JSON.stringify({
         model: modelId,
         messages,
-        stream: true,
-        stream_options: provider === 'openrouter' ? { include_usage: true } : undefined
+        stream: true
       })
     });
 
@@ -189,10 +202,11 @@ export class GeminiService {
   }
 
   async generateTitle(firstMessage: string, provider: Provider, apiKeys: Record<string, string | undefined>): Promise<string> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     try {
       const prompt = `Crie um título curtíssimo (3 palavras) para esta conversa: "${firstMessage}"`;
       if (provider === 'google') {
-        const res = await this.ai.models.generateContent({
+        const res = await ai.models.generateContent({
           model: 'gemini-3-flash-preview',
           contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
@@ -203,7 +217,7 @@ export class GeminiService {
           method: "POST",
           headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: DEFAULT_MODEL, // Sempre usa GPT-OSS 120B para títulos em modo free/openrouter
+            model: "google/gemini-2.0-flash-lite-preview-02-05:free",
             messages: [{ role: 'user', content: prompt }]
           })
         });

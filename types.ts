@@ -2,7 +2,7 @@
 export interface Attachment {
   id: string;
   mimeType: string;
-  data: string; // Base64 string (raw content)
+  data: string;
   fileName: string;
 }
 
@@ -27,7 +27,16 @@ export interface Message {
   isError?: boolean;
   attachments?: Attachment[];
   sources?: MessageSource[];
-  retrievedChunks?: KnowledgeChunk[]; // Trechos usados para gerar a resposta
+  retrievedChunks?: KnowledgeChunk[];
+}
+
+export interface NotebookSource {
+  id: string;
+  url: string;
+  name: string;
+  addedAt: number;
+  isFixed?: boolean;
+  status?: 'idle' | 'checking' | 'success' | 'error';
 }
 
 export interface Agent {
@@ -35,11 +44,11 @@ export interface Agent {
   name: string;
   description: string;
   systemInstruction: string;
-  driveFolderUrl: string; // Public link
-  notebookLmUrl?: string; // Link para NotebookLM
+  driveFolderUrl: string;
+  notebookLmUrl?: string;
   createdAt: number;
-  avatar?: string; // Emoji or Base64
-  themeColor?: string; // Hex color
+  avatar?: string;
+  themeColor?: string;
   tags?: string[];
 }
 
@@ -48,13 +57,20 @@ export interface ChatSession {
   title: string;
   messages: Message[];
   updatedAt: number;
-  agentId?: string; // Optional link to an agent
-  editorContent?: string; // Conteúdo persistido no editor para esta sessão
+  agentId?: string;
+  editorContent?: string;
 }
 
 export type Provider = 'google' | 'openrouter' | 'openai' | 'anthropic' | 'deepseek' | 'groq' | 'mistral' | 'xai';
 
 export type Theme = 'light' | 'dark';
+
+export interface SystemConfig {
+  globalAppName: string;
+  adminWelcomeMessage: string;
+  notebookSources: NotebookSource[];
+  lastUpdated: number;
+}
 
 export interface AppSettings {
   provider: Provider;
@@ -70,7 +86,7 @@ export interface AppSettings {
   customModelId?: string;
   systemInstruction?: string;
   googleSearchEnabled: boolean;
-  isSplitViewEnabled: boolean; // Ativado pelo usuário abaixo do chat
+  isSplitViewEnabled: boolean;
   aiDisplayName: string;
   theme: Theme;
 }
@@ -82,7 +98,6 @@ export interface ModelOption {
   provider: Provider;
 }
 
-// Interfaces para Workflow adicionadas para suportar o componente WorkflowModal
 export interface WorkflowStep {
   id: string;
   name: string;

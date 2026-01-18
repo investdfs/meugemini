@@ -59,7 +59,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   return (
     <div className={`flex w-full mb-4 animate-message ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`flex max-w-[92%] sm:max-w-2xl w-full gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div className={`flex max-w-[96%] sm:max-w-[94%] w-full gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         
         <div className="flex flex-col items-center shrink-0">
           <div 
@@ -89,11 +89,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </div>
         </div>
 
-        <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+        <div className={`flex flex-col gap-1 w-full ${isUser ? 'items-end' : 'items-start'}`}>
           <div className={`
-            relative px-4 py-2.5 rounded-2xl text-sm leading-snug transition-all duration-200 group
+            relative px-4 py-2.5 rounded-2xl text-sm leading-snug transition-all duration-200 group w-full
             ${isUser 
-              ? 'bg-blue-600 text-white rounded-tr-none shadow-sm' 
+              ? 'bg-blue-600 text-white rounded-tr-none shadow-sm ml-auto sm:max-w-fit' 
               : 'bg-soft-card dark:bg-transparent text-gray-800 dark:text-gray-300 rounded-tl-none border border-gray-200 dark:border-white/5 shadow-sm dark:shadow-none'}
           `}>
             
@@ -125,7 +125,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               </div>
             )}
 
-            <div className={`markdown-body ${isTyping && message.text ? 'typing-cursor' : ''}`}>
+            <div className={`markdown-body ${isTyping && message.text ? 'typing-cursor' : ''} w-full`}>
               {isError ? (
                 <div className="flex items-center gap-2 text-red-600 dark:text-red-400 py-0.5">
                    <AlertCircle size={14} />

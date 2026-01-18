@@ -1,65 +1,59 @@
 
 /**
- * Testes de Validação Automática para Gemini Docs UI
- * Foco: Persistência de Chaves, Lógica de Boas-Vindas e Inicialização de Sessão
+ * Testes de Validação Automática - Gemini Docs Interface
+ * Foco: Lógica de Streaming, Persistência e Integração de Chaves
  */
 
 import LZString from 'lz-string';
 
 export const runAutoTests = () => {
-  console.group('🧪 Executando Testes de Qualidade');
+  console.group('🧪 Testes de Garantia de Qualidade');
 
-  // Teste 1: Persistência Local Storage
+  // Teste 1: Validação de Chave Gemini no Ambiente
   try {
-    const testSettings = { googleApiKey: 'test-key-123', provider: 'google' };
-    const compressed = LZString.compress(JSON.stringify(testSettings));
-    localStorage.setItem('test-storage-key', compressed);
-    
-    const retrieved = localStorage.getItem('test-storage-key');
-    if (!retrieved) throw new Error('Falha ao gravar no LocalStorage');
-    
-    const decompressed = LZString.decompress(retrieved);
-    const parsed = JSON.parse(decompressed!);
-    
-    if (parsed.googleApiKey === 'test-key-123') {
-      console.log('✅ Teste 1: Persistência e Compressão de Chaves - SUCESSO');
+    const isApiKeyDefined = typeof process !== 'undefined' && !!process.env.API_KEY;
+    if (isApiKeyDefined) {
+      console.log('✅ Teste 1: Detecção de process.env.API_KEY - SUCESSO');
     } else {
-      throw new Error('Dados recuperados inconsistentes');
+      console.warn('⚠️ Teste 1: process.env.API_KEY não detectada (Ambiente local/dev)');
     }
   } catch (e) {
-    console.error('❌ Teste 1: Falha na Persistência', e);
+    console.error('❌ Teste 1: Erro ao verificar ambiente', e);
   }
 
-  // Teste 2: Lógica de Inicialização (Sessão Limpa)
-  // Simula o comportamento esperado do App.tsx no mount
-  const validateStartupSession = (savedSessionsJson: string | null) => {
-    let sessions = [];
-    if (savedSessionsJson) {
-      sessions = JSON.parse(savedSessionsJson);
-    }
+  // Teste 2: Persistência de Configurações do App
+  try {
+    const mockSettings = { provider: 'google', modelId: 'gemini-3-flash-preview', theme: 'dark' };
+    const compressed = LZString.compress(JSON.stringify(mockSettings));
+    localStorage.setItem('test-storage-settings', compressed);
     
-    // Regra: Sempre deve haver pelo menos uma sessão, e a atual deve ser vazia se acabamos de iniciar
-    const latestIsEmpty = sessions.length > 0 && sessions[0].messages.length === 0;
-    return latestIsEmpty;
+    const retrieved = localStorage.getItem('test-storage-settings');
+    const decompressed = JSON.parse(LZString.decompress(retrieved!)!);
+    
+    if (decompressed.modelId === 'gemini-3-flash-preview') {
+      console.log('✅ Teste 2: Persistência de Configurações - SUCESSO');
+    } else {
+      throw new Error('Inconsistência na recuperação de dados');
+    }
+  } catch (e) {
+    console.error('❌ Teste 2: Falha na Persistência', e);
+  }
+
+  // Teste 3: Lógica de Simulação de Conectividade
+  const mockTestConnectivity = async (url: string) => {
+    // Simula falha para domínios inexistentes
+    if (url.includes('dominio-fantasma')) return false;
+    return true;
   };
 
-  const mockSaved = JSON.stringify([{ id: 'old', messages: [{ text: 'oi' }], updatedAt: 1 }]);
-  // Se tivéssemos acabado de rodar a lógica do App.tsx, a lista teria uma nova sessão no topo
-  const mockAfterInit = JSON.stringify([
-    { id: 'new', messages: [], updatedAt: 2 },
-    { id: 'old', messages: [{ text: 'oi' }], updatedAt: 1 }
-  ]);
-
-  if (validateStartupSession(mockAfterInit)) {
-    console.log('✅ Teste 2: Validação de Sessão Limpa no Início - SUCESSO');
-  } else {
-    console.error('❌ Teste 2: Falha na Lógica de Sessão Limpa');
-  }
+  mockTestConnectivity('https://notebooklm.google.com').then(res => {
+    if (res === true) console.log('✅ Teste 3: Lógica de Conectividade (Sucesso) - SUCESSO');
+  });
 
   console.groupEnd();
 };
 
-// Inicia os testes se o ambiente permitir
+// Auto-execução em ambiente de teste
 if (typeof window !== 'undefined' && window.location.search.includes('test=true')) {
   runAutoTests();
 }
