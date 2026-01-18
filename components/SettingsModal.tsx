@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { X, Settings2, Key, ChevronDown, ShieldCheck, AlertTriangle, Loader2, Rocket, ShieldAlert, Plus, Trash2, BrainCircuit, CheckCircle2, Wifi, WifiOff, Globe, Lock, LayoutTemplate, MessageSquareQuote, Info, RefreshCcw, Edit3, Save, RotateCcw } from 'lucide-react';
+import { X, Settings2, Key, ChevronDown, ShieldCheck, AlertTriangle, Loader2, Rocket, ShieldAlert, Plus, Trash2, BrainCircuit, CheckCircle2, Wifi, WifiOff, Globe, Lock, LayoutTemplate, MessageSquareQuote, Info, RefreshCcw, Edit3, Save, RotateCcw, Database } from 'lucide-react';
 import { AppSettings, Provider, SystemConfig, NotebookSource } from '../types';
 import { PROVIDER_LABELS } from '../constants';
 
@@ -144,7 +144,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       url,
       name,
       addedAt: Date.now(),
-      isFixed: true, // Qualquer nova fonte do admin é considerada FIXA/MESTRE
+      isFixed: true, 
       status: 'checking'
     };
 
@@ -175,7 +175,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setIsSaving(true);
     try {
       onSave(localSettings);
-      // Remove status temporários de validação antes de persistir
       const cleanSources = localSystemConfig.notebookSources.map(({ status, ...rest }) => rest);
       onUpdateSystemConfig({ ...localSystemConfig, notebookSources: cleanSources as NotebookSource[] });
       setSaveStatus('success');
@@ -239,7 +238,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
-          {/* Admin e Conhecimento */}
+          {/* Painel Administrativo */}
           <div className="pt-6 border-t border-gray-100 dark:border-white/5">
             {!isAdminOpen ? (
               <button onClick={() => setIsAdminOpen(true)} className="w-full p-4 flex items-center justify-between bg-amber-600/5 hover:bg-amber-600/10 border border-amber-600/20 rounded-2xl transition-all">
@@ -266,7 +265,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             ) : (
               <div className="p-6 bg-amber-600/5 border border-amber-600/20 rounded-2xl space-y-6 animate-message">
                 
-                {/* Identidade */}
+                {/* Marca e Mensagens */}
                 <div className="space-y-4">
                   <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
                     <LayoutTemplate size={14} /> Marca do Sistema
@@ -287,7 +286,22 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   />
                 </div>
 
-                {/* Gestão de Notebooks */}
+                {/* Contexto Global (O NOVO CAMPO SOLICITADO) */}
+                <div className="space-y-4 pt-4 border-t border-amber-600/10">
+                  <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+                    <Database size={14} /> Diretrizes Mestres de Resposta (Contexto Global)
+                  </span>
+                  <p className="text-[10px] text-amber-700/60 font-medium italic">Define o comportamento base de todos os chats quando nenhum agente específico é selecionado.</p>
+                  <textarea 
+                    value={localSystemConfig.globalSystemContext || ''}
+                    onChange={e => setLocalSystemConfig({...localSystemConfig, globalSystemContext: e.target.value})}
+                    rows={5}
+                    placeholder="Ex: Você é um assistente militar sênior. Suas respostas devem ser curtas, diretas e formais..."
+                    className="w-full bg-white dark:bg-[#1e1f20] border border-amber-600/20 rounded-xl px-4 py-3 text-xs font-medium resize-none custom-scrollbar"
+                  />
+                </div>
+
+                {/* Notebooks */}
                 <div className="space-y-4 pt-4 border-t border-amber-600/10">
                    <div className="flex items-center justify-between">
                      <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
@@ -306,7 +320,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="flex-1 space-y-2">
                       <input 
                         type="text" 
-                        placeholder="Identificador da Fonte (ex: Manual EB)"
+                        placeholder="Identificador da Fonte"
                         value={newNotebookName}
                         onChange={(e) => setNewNotebookName(e.target.value)}
                         className="w-full bg-white dark:bg-[#1e1f20] border border-amber-600/20 rounded-xl px-4 py-2 text-xs font-bold"
@@ -327,18 +341,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div key={source.id} className="bg-white/50 dark:bg-black/20 border border-amber-600/10 p-3 rounded-xl space-y-2">
                         {editingId === source.id ? (
                           <div className="space-y-2">
-                            <input 
-                              type="text" 
-                              value={editName}
-                              onChange={(e) => setEditName(e.target.value)}
-                              className="w-full bg-white dark:bg-black/40 border border-blue-500/40 rounded-lg px-2 py-1.5 text-xs font-bold"
-                            />
-                            <input 
-                              type="text" 
-                              value={editUrl}
-                              onChange={(e) => setEditUrl(e.target.value)}
-                              className="w-full bg-white dark:bg-black/40 border border-blue-500/40 rounded-lg px-2 py-1.5 text-xs font-mono"
-                            />
+                            <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full bg-white dark:bg-black/40 border border-blue-500/40 rounded-lg px-2 py-1.5 text-xs font-bold" />
+                            <input type="text" value={editUrl} onChange={(e) => setEditUrl(e.target.value)} className="w-full bg-white dark:bg-black/40 border border-blue-500/40 rounded-lg px-2 py-1.5 text-xs font-mono" />
                             <div className="flex justify-end gap-2 pt-1">
                               <button onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-200 dark:bg-white/5 rounded-md text-[9px] font-black uppercase">Cancelar</button>
                               <button onClick={saveEdit} className="px-3 py-1 bg-green-600 text-white rounded-md text-[9px] font-black uppercase flex items-center gap-1"><Save size={10} /> Aplicar</button>
@@ -358,7 +362,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                </div>
                             </div>
                             <div className="flex items-center gap-1">
-                               <button onClick={() => startEditing(source)} className="p-1.5 text-gray-400 hover:text-blue-500 transition-all" title="Editar Manualmente"><Edit3 size={14} /></button>
+                               <button onClick={() => startEditing(source)} className="p-1.5 text-gray-400 hover:text-blue-500 transition-all"><Edit3 size={14} /></button>
                                <button onClick={() => testSingleSource(source.id)} className="p-1.5 text-gray-400 hover:text-amber-500 transition-all"><RefreshCcw size={14}/></button>
                                <button onClick={() => removeNotebookSource(source.id)} className="p-1.5 text-gray-400 hover:text-red-500 transition-all"><Trash2 size={14}/></button>
                             </div>

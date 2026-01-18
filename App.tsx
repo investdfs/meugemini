@@ -33,6 +33,7 @@ const App: React.FC = () => {
   const [systemConfig, setSystemConfig] = useState<SystemConfig>({
     globalAppName: DEFAULT_AI_NAME,
     adminWelcomeMessage: 'Sincronização de Conhecimento Mestre Ativada.',
+    globalSystemContext: 'Você é um assistente militar especializado em assessoria administrativa. Suas respostas devem ser precisas, formais e baseadas nas regulamentações vigentes.',
     notebookSources: [...FIXED_NOTEBOOK_SOURCES.map(f => ({ ...f, isFixed: true }))],
     lastUpdated: Date.now()
   });
@@ -72,8 +73,7 @@ const App: React.FC = () => {
     try {
       const savedSystem = localStorage.getItem('gemini-system-config-v2');
       if (savedSystem) {
-        const parsed = JSON.parse(savedSystem);
-        setSystemConfig(parsed);
+        setSystemConfig(JSON.parse(savedSystem));
       } else {
         setSystemConfig(prev => ({
           ...prev,
@@ -83,7 +83,6 @@ const App: React.FC = () => {
 
       const vaultData = localStorage.getItem('gemini-vault-v1');
       const savedSettings = localStorage.getItem('gemini-settings-v2');
-      
       if (vaultData) {
         setIsLocked(true);
       } else if (savedSettings) {
@@ -123,7 +122,6 @@ const App: React.FC = () => {
   const handleUpdateSystemConfig = (newConfig: SystemConfig) => {
     const processedSources = newConfig.notebookSources.map(s => ({ ...s, isFixed: true }));
     const finalConfig = { ...newConfig, notebookSources: processedSources, lastUpdated: Date.now() };
-    
     setSystemConfig(finalConfig);
     localStorage.setItem('gemini-system-config-v2', JSON.stringify(finalConfig));
   };
@@ -142,9 +140,16 @@ const App: React.FC = () => {
 
     try {
       const history = currentSession?.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })) || [];
-      const apiKeys = { openRouterApiKey: settings.openRouterApiKey, openaiApiKey: settings.openaiApiKey, deepseekApiKey: settings.deepseekApiKey, groqApiKey: settings.groqApiKey, anthropicApiKey: settings.anthropicApiKey };
+      const apiKeys = { 
+        openRouterApiKey: settings.openRouterApiKey, 
+        openaiApiKey: settings.openaiApiKey, 
+        deepseekApiKey: settings.deepseekApiKey, 
+        groqApiKey: settings.groqApiKey, 
+        anthropicApiKey: settings.anthropicApiKey,
+        googleApiKey: settings.googleApiKey
+      };
       
-      let systemPrompt = settings.systemInstruction || '';
+      let systemPrompt = systemConfig.globalSystemContext || settings.systemInstruction || 'Você é um assistente militar especializado.';
       const sources = systemConfig.notebookSources || [];
 
       if (currentAgent) {
@@ -152,7 +157,7 @@ const App: React.FC = () => {
         if (currentAgent.notebookLmUrl) systemPrompt += `\n\n[FONTE AGENTE]\nURL: ${currentAgent.notebookLmUrl}`;
       } else if (sources.length > 0) {
         const formattedSources = sources.map((s, i) => `[FONTE ${i+1}] ${s.name}: ${s.url}`).join('\n');
-        systemPrompt = `SISTEMA: ${systemConfig.globalAppName.toUpperCase()}\n\n[CONHECIMENTO MESTRE ATIVO]\nUtilize estes repositórios globais para fundamentar as respostas:\n${formattedSources}\n\n[DIRETRIZES]\n${settings.systemInstruction || 'Assitente militar especializado.'}`;
+        systemPrompt = `SISTEMA: ${systemConfig.globalAppName.toUpperCase()}\n\n[DIRETRIZES MESTRES]\n${systemConfig.globalSystemContext || 'Comporte-se como um assistente militar formal.'}\n\n[CONHECIMENTO MESTRE ATIVO]\nUtilize estes repositórios globais para fundamentar as respostas:\n${formattedSources}\n\n[INSTRUÇÃO DO USUÁRIO]\n${settings.systemInstruction || ''}`;
       }
 
       const stream = geminiService.current.streamChat(settings.provider, settings.modelId, history, userMsgText, currentAttachments, systemPrompt, settings.googleSearchEnabled, apiKeys);
@@ -197,13 +202,25 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-row h-full relative">
         <div className={`flex flex-col h-full transition-all duration-500 ${settings.isSplitViewEnabled ? 'w-1/2' : 'w-full'}`}>
           <header className="h-14 flex items-center justify-between px-4 sm:px-6 border-b border-gray-200 dark:border-white/5 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md z-[100] shrink-0 transition-colors duration-300">
-            <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+            <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all shrink-0"><Menu size={18} /></button>
-              <div className="flex items-center gap-3">
+              
+              {/* LOGO E NOME À ESQUERDA */}
+              <div className="flex items-center gap-3 shrink-0">
                  <FuturisticLogo size={28} isProcessing={isGenerating} />
-                 <span className="text-sm font-black hidden sm:block truncate max-w-[120px] uppercase tracking-tighter">{systemConfig.globalAppName}</span>
+                 <span className="text-sm font-black hidden sm:block lg:block truncate max-w-[120px] uppercase tracking-tighter">{systemConfig.globalAppName}</span>
+              </div>
+
+              {/* SELETOR DE MODELOS POSICIONADO À ESQUERDA LOGO APÓS A MARCA */}
+              <div className="hidden sm:block shrink-0">
+                <ModelSelector 
+                  settings={settings} 
+                  onUpdateSettings={(newPartial) => setSettings(prev => ({ ...prev, ...newPartial }))}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                />
               </div>
             </div>
+
             <div className="flex items-center gap-1 sm:gap-2 shrink-0">
               <button onClick={() => setSettings(prev => ({ ...prev, isSplitViewEnabled: !prev.isSplitViewEnabled }))} className={`p-2 rounded-lg transition-all flex items-center gap-2 ${settings.isSplitViewEnabled ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-black/5 dark:hover:bg-white/5'}`}><Columns size={18} /><span className="text-[10px] font-black uppercase hidden lg:inline">Editor</span></button>
               <button onClick={() => setSettings(prev => ({ ...prev, theme: prev.theme === 'dark' ? 'light' : 'dark' }))} className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-all">{settings.theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}</button>

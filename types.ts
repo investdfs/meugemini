@@ -68,6 +68,7 @@ export type Theme = 'light' | 'dark';
 export interface SystemConfig {
   globalAppName: string;
   adminWelcomeMessage: string;
+  globalSystemContext?: string;
   notebookSources: NotebookSource[];
   lastUpdated: number;
 }
