@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Menu, Paperclip, X, Zap, Sun, Moon, Database, Columns, Lock, Loader2, BrainCircuit, Globe } from 'lucide-react';
+import { Send, Menu, Paperclip, X, Zap, Sun, Moon, Database, Columns, Lock, Loader2, BrainCircuit, Globe, File as FileIcon } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import LZString from 'lz-string';
 
@@ -265,11 +265,43 @@ const App: React.FC = () => {
 
           <div className="p-4 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md">
             <div className="max-w-[98%] mx-auto space-y-3">
+              {/* Preview de Anexos */}
+              {selectedFiles.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto py-2 px-1 custom-scrollbar">
+                  {selectedFiles.map(file => (
+                    <div key={file.id} className="relative group shrink-0 animate-in fade-in zoom-in duration-200">
+                      <div className="h-16 w-16 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden bg-white dark:bg-white/5 flex items-center justify-center relative">
+                        {file.mimeType.startsWith('image/') ? (
+                          <img src={`data:${file.mimeType};base64,${file.data}`} alt={file.fileName} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 p-1">
+                            <FileIcon size={20} className="text-blue-500" />
+                            <span className="text-[9px] text-center line-clamp-2 w-full break-words leading-tight opacity-70">{file.fileName}</span>
+                          </div>
+                        )}
+                        {/* Overlay com nome do arquivo no hover para imagens */}
+                        {file.mimeType.startsWith('image/') && (
+                          <div className="absolute inset-x-0 bottom-0 bg-black/60 p-0.5 text-[8px] text-white truncate text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            {file.fileName}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setSelectedFiles(prev => prev.filter(f => f.id !== file.id))}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 shadow-sm hover:bg-red-600 transition-colors z-10"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className={`flex items-end gap-3 glass rounded-[2rem] p-4 border border-gray-200 dark:border-white/5 ${isGenerating ? 'opacity-50 pointer-events-none' : 'focus-within:border-blue-500/40 shadow-xl'}`}>
                 <input type="file" multiple ref={fileInputRef} onChange={async (e) => { if (e.target.files) { const files = Array.from(e.target.files); const newAtts = await Promise.all(files.map(async (file: any) => { const base64 = await new Promise<string>(res => { const reader = new FileReader(); reader.onload = () => res((reader.result as string).split(',')[1]); reader.readAsDataURL(file); }); return { id: generateId(), mimeType: file.type, fileName: file.name, data: base64 }; })); setSelectedFiles(prev => [...prev, ...newAtts]); } }} className="hidden" />
-                <button onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-400 hover:bg-black/5 rounded-2xl"><Paperclip size={22} /></button>
+                <button onClick={() => fileInputRef.current?.click()} className="p-3 text-gray-400 hover:bg-black/5 rounded-2xl transition-colors"><Paperclip size={22} /></button>
                 <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())} placeholder="Digite sua mensagem..." className="w-full bg-transparent py-3 outline-none resize-none min-h-[50px] text-sm px-2 custom-scrollbar" rows={1} />
-                <button onClick={handleSendMessage} disabled={isGenerating || (!input.trim() && selectedFiles.length === 0)} className={`p-4 rounded-2xl ${isGenerating || (!input.trim() && selectedFiles.length === 0) ? 'bg-soft-surface text-gray-400' : 'bg-gray-900 dark:bg-white text-white dark:text-black shadow-xl hover:scale-105'}`}><Send size={22} /></button>
+                <button onClick={handleSendMessage} disabled={isGenerating || (!input.trim() && selectedFiles.length === 0)} className={`p-4 rounded-2xl ${isGenerating || (!input.trim() && selectedFiles.length === 0) ? 'bg-soft-surface text-gray-400' : 'bg-gray-900 dark:bg-white text-white dark:text-black shadow-xl hover:scale-105 transition-all'}`}><Send size={22} /></button>
               </div>
             </div>
           </div>
