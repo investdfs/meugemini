@@ -35,7 +35,20 @@ function loadFromStorage<T>(key: string): T | null {
 
 export function getProviders(): ProviderConfig[] {
     const stored = loadFromStorage<ProviderConfig[]>(AI_STORAGE_KEYS.PROVIDERS);
-    if (stored && stored.length > 0) return stored;
+
+    if (stored && stored.length > 0) {
+        // Merge missing providers from defaults (para suportar novos providers adicionados)
+        const existingNames = new Set(stored.map(p => p.name));
+        const missingProviders = DEFAULT_PROVIDERS.filter(p => !existingNames.has(p.name));
+
+        if (missingProviders.length > 0) {
+            const merged = [...stored, ...missingProviders.map(p => ({ ...p }))];
+            saveToStorage(AI_STORAGE_KEYS.PROVIDERS, merged);
+            return merged;
+        }
+
+        return stored;
+    }
 
     // Initialize with defaults
     const defaults = DEFAULT_PROVIDERS.map(p => ({ ...p }));
@@ -69,7 +82,10 @@ interface ApiKeyStore {
 export function getApiKey(providerName: ProviderName): string {
     const store = loadFromStorage<ApiKeyStore>(AI_STORAGE_KEYS.API_KEYS) || {};
     const encrypted = store[providerName];
-    return encrypted ? decryptApiKey(encrypted) : '';
+    console.log('[getApiKey] Provider:', providerName, 'Encrypted exists:', !!encrypted, 'Store keys:', Object.keys(store));
+    const decrypted = encrypted ? decryptApiKey(encrypted) : '';
+    console.log('[getApiKey] Decrypted length:', decrypted.length);
+    return decrypted;
 }
 
 export function saveApiKey(providerName: ProviderName, plainKey: string): void {
@@ -92,7 +108,27 @@ export function hasApiKey(providerName: ProviderName): boolean {
 
 export function getModels(): AIModel[] {
     const stored = loadFromStorage<AIModel[]>(AI_STORAGE_KEYS.MODELS);
-    if (stored && stored.length > 0) return stored;
+
+    if (stored && stored.length > 0) {
+        // Merge missing models from defaults (para suportar novos modelos adicionados)
+        const existingModelIds = new Set(stored.map(m => m.modelId));
+        const missingModels = DEFAULT_MODELS.filter(m => !existingModelIds.has(m.modelId));
+
+        if (missingModels.length > 0) {
+            const now = Date.now();
+            const newModels: AIModel[] = missingModels.map(m => ({
+                ...m,
+                id: generateModelId(),
+                createdAt: now,
+                updatedAt: now,
+            }));
+            const merged = [...stored, ...newModels];
+            saveToStorage(AI_STORAGE_KEYS.MODELS, merged);
+            return merged;
+        }
+
+        return stored;
+    }
 
     // Initialize with defaults
     const now = Date.now();

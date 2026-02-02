@@ -15,7 +15,8 @@ export type ProviderName =
     | 'deepseek'
     | 'groq'
     | 'mistral'
-    | 'xai';
+    | 'xai'
+    | 'nvidia';
 
 export interface ProviderConfig {
     id: string;

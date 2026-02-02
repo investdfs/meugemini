@@ -12,3 +12,5 @@ export {
     mistralProvider,
     xaiProvider,
 } from './OpenAICompatibleProvider';
+export { NvidiaProvider, nvidiaProvider } from './NvidiaProvider';
+

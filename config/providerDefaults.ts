@@ -81,6 +81,14 @@ export const DEFAULT_PROVIDERS: Omit<ProviderConfig, 'apiKeyEncrypted'>[] = [
         isActive: false,
         requiresKey: true,
     },
+    {
+        id: 'provider_nvidia',
+        name: 'nvidia',
+        displayName: 'NVIDIA NIM',
+        baseUrl: 'https://integrate.api.nvidia.com/v1',
+        isActive: false,
+        requiresKey: true,
+    },
 ];
 
 // ==================== MODEL DEFAULTS ====================
@@ -273,6 +281,25 @@ export const DEFAULT_MODELS: Omit<AIModel, 'id' | 'createdAt' | 'updatedAt'>[] =
             contextWindow: 131072,
         },
         pricing: { inputPerMillion: 3, outputPerMillion: 15, currency: 'USD' },
+    },
+
+    // ===== NVIDIA NIM (Kimi K2.5) =====
+    {
+        providerId: 'provider_nvidia',
+        providerName: 'nvidia',
+        modelId: 'moonshotai/kimi-k2.5',
+        displayName: 'Kimi K2.5 (NVIDIA)',
+        description: 'Modelo Kimi K2.5 via NVIDIA NIM com thinking mode',
+        isDefault: false,
+        priorityOrder: 70,
+        isActive: true,
+        capabilities: {
+            supportsVision: false,
+            supportsStreaming: true,
+            supportsReasoning: true,
+            contextWindow: 131072,
+            maxOutputTokens: 16384,
+        },
     },
 ];
 

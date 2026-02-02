@@ -150,7 +150,8 @@ const App: React.FC = () => {
         deepseekApiKey: getApiKey('deepseek') || settings.deepseekApiKey,
         groqApiKey: getApiKey('groq') || settings.groqApiKey,
         anthropicApiKey: getApiKey('anthropic') || settings.anthropicApiKey,
-        googleApiKey: getApiKey('google') || settings.googleApiKey
+        googleApiKey: getApiKey('google') || settings.googleApiKey,
+        nvidiaApiKey: getApiKey('nvidia')
       };
 
       // Usa modelo ativo do Dashboard se disponível

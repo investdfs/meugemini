@@ -22,6 +22,7 @@ import {
     groqProvider,
     mistralProvider,
     xaiProvider,
+    nvidiaProvider,
 } from './providers';
 
 import {
@@ -57,6 +58,7 @@ class AIModelManager {
         this.providers.set('groq', groqProvider);
         this.providers.set('mistral', mistralProvider);
         this.providers.set('xai', xaiProvider);
+        this.providers.set('nvidia', nvidiaProvider);
     }
 
     // ==================== PROVIDER OPERATIONS ====================
@@ -119,8 +121,10 @@ class AIModelManager {
         }
 
         const apiKey = getApiKey(activeModel.providerName);
+        console.log('[AIModelManager] Debug - providerName:', activeModel.providerName, 'hasKey:', !!apiKey);
+
         if (!apiKey) {
-            throw new Error(`Chave de API não configurada para ${activeModel.providerName}.`);
+            throw new Error(`Chave para ${activeModel.providerName} não configurada.`);
         }
 
         try {

@@ -90,6 +90,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       groq: 'Groq',
       mistral: 'Mistral',
       xai: 'Grok',
+      nvidia: 'NVIDIA',
     };
     return labels[provider] || provider;
   };
@@ -127,8 +128,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                   key={provider}
                   onClick={() => handleProviderChange(provider)}
                   className={`flex-1 py-2 px-1 rounded-xl text-[9px] font-black uppercase tracking-tight transition-all ${selectedProvider === provider
-                      ? 'bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-sm'
-                      : 'text-gray-400 hover:text-black dark:hover:text-white'
+                    ? 'bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-sm'
+                    : 'text-gray-400 hover:text-black dark:hover:text-white'
                     }`}
                 >
                   {getProviderLabel(provider)}
@@ -151,8 +152,8 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                     key={model.id}
                     onClick={() => handleModelSelect(model)}
                     className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between group ${currentModel?.id === model.id
-                        ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-100'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                      ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-100'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
                       }`}
                   >
                     <div className="flex flex-col">

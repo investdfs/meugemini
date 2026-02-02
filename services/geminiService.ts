@@ -51,7 +51,7 @@ export class GeminiService {
     googleSearchEnabled: boolean = false,
     apiKeys: Record<string, string | undefined> = {}
   ): AsyncGenerator<StreamResult, void, unknown> {
-    
+
     if (provider === 'google') {
       yield* this.streamGoogle(modelId, history, newMessage, attachments, systemInstruction, googleSearchEnabled);
     } else {
@@ -69,10 +69,10 @@ export class GeminiService {
   ): AsyncGenerator<StreamResult, void, unknown> {
     // Instanciação dinâmica para garantir o uso da chave mais recente do env
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-    
+
     try {
       const parts: any[] = [{ text: newMessage }];
-      
+
       attachments.forEach(att => {
         if (att.mimeType.startsWith('image/')) {
           parts.push({ inlineData: { mimeType: att.mimeType, data: att.data } });
@@ -98,13 +98,13 @@ export class GeminiService {
         if (c.text) {
           fullText += c.text;
         }
-        
+
         // Extração de Grounding (Citações e Links)
         const sources = c.candidates?.[0]?.groundingMetadata?.groundingChunks
           ?.filter((chunk: any) => chunk.web)
-          .map((chunk: any) => ({ 
-            title: chunk.web.title, 
-            uri: chunk.web.uri 
+          .map((chunk: any) => ({
+            title: chunk.web.title,
+            uri: chunk.web.uri
           }));
 
         yield { text: fullText, sources };
@@ -124,33 +124,68 @@ export class GeminiService {
     systemInstruction?: string,
     apiKeys: Record<string, string | undefined> = {}
   ): AsyncGenerator<StreamResult, void, unknown> {
-    
+
     const keyMap: Record<string, string | undefined> = {
       openrouter: apiKeys.openRouterApiKey,
       openai: apiKeys.openaiApiKey,
       deepseek: apiKeys.deepseekApiKey,
       groq: apiKeys.groqApiKey,
-      anthropic: apiKeys.anthropicApiKey
+      anthropic: apiKeys.anthropicApiKey,
+      nvidia: apiKeys.nvidiaApiKey
     };
 
     const effectiveKey = provider === 'openrouter' ? this.getOpenRouterKey(apiKeys) : keyMap[provider];
-    
+
     if (!effectiveKey) throw new Error(`Chave para ${provider} não configurada.`);
-    
+
     const endpoints: Record<string, string> = {
       openrouter: "https://openrouter.ai/api/v1/chat/completions",
       openai: "https://api.openai.com/v1/chat/completions",
       deepseek: "https://api.deepseek.com/chat/completions",
       groq: "https://api.groq.com/openai/v1/chat/completions",
-      anthropic: "https://api.anthropic.com/v1/messages" // Anthropic usa formato diferente, mas aqui simplificamos via proxy se necessário
+      anthropic: "https://api.anthropic.com/v1/messages",
+      nvidia: "/api/nvidia-proxy/chat/completions" // Via Vite proxy para bypass CORS
     };
 
     const endpoint = endpoints[provider] || endpoints.openrouter;
 
+    // Constrói o conteúdo da mensagem do usuário (Multimodal)
+    let userContent: any[] | string = newMessage;
+
+    if (attachments.length > 0) {
+      userContent = [{ type: "text", text: newMessage }];
+
+      for (const att of attachments) {
+        if (att.mimeType.startsWith('image/')) {
+          // Adiciona imagem como image_url
+          userContent.push({
+            type: "image_url",
+            image_url: {
+              url: `data:${att.mimeType};base64,${att.data}`
+            }
+          });
+        } else if (att.mimeType.startsWith('text/') || att.mimeType === 'application/json') {
+          // Tenta decodificar arquivos de texto base64
+          try {
+            const textContent = atob(att.data);
+            userContent.push({
+              type: "text",
+              text: `\n[Arquivo: ${att.fileName}]\n${textContent}`
+            });
+          } catch (e) {
+            console.warn(`Erro ao decodificar arquivo texto: ${att.fileName}`, e);
+          }
+        }
+        // Nota: PDFs requerem extração prévia de texto ou modelo com suporte nativo a PDF.
+        // O App.tsx atual envia PDF como base64, que funciona nativamente apenas no Gemini (GoogleProvider).
+        // Para outros, idealmente o App.tsx deveria extrair o texto antes.
+      }
+    }
+
     const messages = [
       { role: 'system', content: systemInstruction || "Você é um assistente militar." },
       ...history.map(h => ({ role: h.role === 'model' ? 'assistant' : 'user', content: h.parts[0]?.text || '' })),
-      { role: 'user', content: newMessage }
+      { role: 'user', content: userContent }
     ];
 
     const response = await fetch(endpoint, {
@@ -179,7 +214,7 @@ export class GeminiService {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
+
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
       buffer = lines.pop() || "";
@@ -195,7 +230,7 @@ export class GeminiService {
               fullText += content;
               yield { text: fullText };
             }
-          } catch (e) {}
+          } catch (e) { }
         }
       }
     }
