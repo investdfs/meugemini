@@ -16,6 +16,7 @@ import { MasterPasswordModal } from './components/MasterPasswordModal';
 import { ModelDashboard } from './components/admin';
 import { GeminiService } from './services/geminiService';
 import { SecurityService } from './services/securityService';
+import { getApiKey, getActiveModel } from './services/ai';
 import { ChatSession, Message, AppSettings, Attachment, Agent, SystemConfig, NotebookSource } from './types';
 import { DEFAULT_MODEL, DEFAULT_AI_NAME, PROFESSIONAL_STARTERS, DEFAULT_DIEX_AGENT, FIXED_NOTEBOOK_SOURCES } from './constants';
 
@@ -142,14 +143,20 @@ const App: React.FC = () => {
 
     try {
       const history = currentSession?.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })) || [];
+      // Prioriza chaves do Dashboard de IA, fallback para settings legados
       const apiKeys = {
-        openRouterApiKey: settings.openRouterApiKey,
-        openaiApiKey: settings.openaiApiKey,
-        deepseekApiKey: settings.deepseekApiKey,
-        groqApiKey: settings.groqApiKey,
-        anthropicApiKey: settings.anthropicApiKey,
-        googleApiKey: settings.googleApiKey
+        openRouterApiKey: getApiKey('openrouter') || settings.openRouterApiKey,
+        openaiApiKey: getApiKey('openai') || settings.openaiApiKey,
+        deepseekApiKey: getApiKey('deepseek') || settings.deepseekApiKey,
+        groqApiKey: getApiKey('groq') || settings.groqApiKey,
+        anthropicApiKey: getApiKey('anthropic') || settings.anthropicApiKey,
+        googleApiKey: getApiKey('google') || settings.googleApiKey
       };
+
+      // Usa modelo ativo do Dashboard se disponível
+      const activeModel = getActiveModel();
+      const effectiveProvider = activeModel?.providerName || settings.provider;
+      const effectiveModelId = activeModel?.modelId || settings.modelId;
 
       let systemPrompt = systemConfig.globalSystemContext || settings.systemInstruction || 'Você é um assistente militar especializado.';
       const sources = systemConfig.notebookSources || [];
@@ -162,7 +169,7 @@ const App: React.FC = () => {
         systemPrompt = `SISTEMA: ${systemConfig.globalAppName.toUpperCase()}\n\n[DIRETRIZES MESTRES]\n${systemConfig.globalSystemContext || 'Comporte-se como um assistente militar formal.'}\n\n[CONHECIMENTO MESTRE ATIVO]\nUtilize estes repositórios globais para fundamentar as respostas:\n${formattedSources}\n\n[INSTRUÇÃO DO USUÁRIO]\n${settings.systemInstruction || ''}`;
       }
 
-      const stream = geminiService.current.streamChat(settings.provider, settings.modelId, history, userMsgText, currentAttachments, systemPrompt, settings.googleSearchEnabled, apiKeys);
+      const stream = geminiService.current.streamChat(effectiveProvider as any, effectiveModelId, history, userMsgText, currentAttachments, systemPrompt, settings.googleSearchEnabled, apiKeys);
       for await (const chunk of stream) {
         setSessions(prev => prev.map(s => {
           if (s.id === currentSessionId) {

@@ -1,5 +1,5 @@
-**Última Atualização:** 2026-02-02 14:20
-**Status:** Seletor de modelos integrado com aiModelManager. Exibe modelos configurados pelo admin com troca rápida.
+**Última Atualização:** 2026-02-02 14:45
+**Status:** Integração API corrigida. Chat agora usa chaves e modelo do Dashboard de IA.
 
 ### 🏗️ Arquitetura & Stack
 - **Framework:** React 19 executado via Vite.
