@@ -13,6 +13,7 @@ import { ModelSelector } from './components/ModelSelector';
 import { FuturisticLogo } from './components/FuturisticLogo';
 import { DocumentEditor } from './components/DocumentEditor';
 import { MasterPasswordModal } from './components/MasterPasswordModal';
+import { ModelDashboard } from './components/admin';
 import { GeminiService } from './services/geminiService';
 import { SecurityService } from './services/securityService';
 import { ChatSession, Message, AppSettings, Attachment, Agent, SystemConfig, NotebookSource } from './types';
@@ -22,7 +23,7 @@ const generateId = () => Math.random().toString(36).substring(2, 11);
 
 try {
   pdfjs.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs`;
-} catch (e) {}
+} catch (e) { }
 
 const App: React.FC = () => {
   const [isLocked, setIsLocked] = useState(false);
@@ -52,13 +53,14 @@ const App: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>([DEFAULT_DIEX_AGENT]);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
+  const [isAIDashboardOpen, setIsAIDashboardOpen] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
   const [selectedFiles, setSelectedFiles] = useState<(Attachment & { extractedText?: string, isOcr?: boolean })[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -135,20 +137,20 @@ const App: React.FC = () => {
     const userMsg: Message = { id: generateId(), role: 'user', text: userMsgText || "Análise Documental", attachments: currentAttachments, timestamp: Date.now() };
     const botMsgId = generateId();
     const botMsg: Message = { id: botMsgId, role: 'model', text: '', timestamp: Date.now() + 1 };
-    
+
     setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, messages: [...s.messages, userMsg, botMsg], updatedAt: Date.now() } : s));
 
     try {
       const history = currentSession?.messages.map(m => ({ role: m.role, parts: [{ text: m.text }] })) || [];
-      const apiKeys = { 
-        openRouterApiKey: settings.openRouterApiKey, 
-        openaiApiKey: settings.openaiApiKey, 
-        deepseekApiKey: settings.deepseekApiKey, 
-        groqApiKey: settings.groqApiKey, 
+      const apiKeys = {
+        openRouterApiKey: settings.openRouterApiKey,
+        openaiApiKey: settings.openaiApiKey,
+        deepseekApiKey: settings.deepseekApiKey,
+        groqApiKey: settings.groqApiKey,
         anthropicApiKey: settings.anthropicApiKey,
         googleApiKey: settings.googleApiKey
       };
-      
+
       let systemPrompt = systemConfig.globalSystemContext || settings.systemInstruction || 'Você é um assistente militar especializado.';
       const sources = systemConfig.notebookSources || [];
 
@@ -156,7 +158,7 @@ const App: React.FC = () => {
         systemPrompt = `AGENTE: ${currentAgent.name.toUpperCase()}\n\n${currentAgent.systemInstruction}`;
         if (currentAgent.notebookLmUrl) systemPrompt += `\n\n[FONTE AGENTE]\nURL: ${currentAgent.notebookLmUrl}`;
       } else if (sources.length > 0) {
-        const formattedSources = sources.map((s, i) => `[FONTE ${i+1}] ${s.name}: ${s.url}`).join('\n');
+        const formattedSources = sources.map((s, i) => `[FONTE ${i + 1}] ${s.name}: ${s.url}`).join('\n');
         systemPrompt = `SISTEMA: ${systemConfig.globalAppName.toUpperCase()}\n\n[DIRETRIZES MESTRES]\n${systemConfig.globalSystemContext || 'Comporte-se como um assistente militar formal.'}\n\n[CONHECIMENTO MESTRE ATIVO]\nUtilize estes repositórios globais para fundamentar as respostas:\n${formattedSources}\n\n[INSTRUÇÃO DO USUÁRIO]\n${settings.systemInstruction || ''}`;
       }
 
@@ -188,13 +190,15 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-soft-bg dark:bg-gemini-dark text-slate-800 dark:text-white overflow-hidden transition-colors duration-300">
-      <Sidebar 
-        isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} 
-        sessions={sessions} agents={agents} currentSessionId={currentSessionId} 
-        onSelectSession={setCurrentSessionId} 
+      <Sidebar
+        isOpen={isSidebarOpen} toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        sessions={sessions} agents={agents} currentSessionId={currentSessionId}
+        onSelectSession={setCurrentSessionId}
         onNewChat={() => createNewSession()} onNewAgentChat={createNewSession}
-        onDeleteSession={(id, e) => { e.stopPropagation(); setSessions(prev => prev.filter(s => s.id !== id)); if(currentSessionId === id) setCurrentSessionId(null); }}
-        onOpenSettings={() => setIsSettingsOpen(true)} onOpenAgentModal={(a) => { setEditingAgent(a || null); setIsAgentModalOpen(true); }}
+        onDeleteSession={(id, e) => { e.stopPropagation(); setSessions(prev => prev.filter(s => s.id !== id)); if (currentSessionId === id) setCurrentSessionId(null); }}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenAIDashboard={() => setIsAIDashboardOpen(true)}
+        onOpenAgentModal={(a) => { setEditingAgent(a || null); setIsAgentModalOpen(true); }}
         onDeleteAgent={(id, e) => { e.stopPropagation(); setAgents(prev => prev.filter(a => a.id !== id)); }}
         aiDisplayName={systemConfig.globalAppName}
         isGenerating={isGenerating}
@@ -204,19 +208,20 @@ const App: React.FC = () => {
           <header className="h-14 flex items-center justify-between px-4 sm:px-6 border-b border-gray-200 dark:border-white/5 bg-soft-bg/80 dark:bg-gemini-dark/80 backdrop-blur-md z-[100] shrink-0 transition-colors duration-300">
             <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
               <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-all shrink-0"><Menu size={18} /></button>
-              
+
               {/* LOGO E NOME À ESQUERDA */}
               <div className="flex items-center gap-3 shrink-0">
-                 <FuturisticLogo size={28} isProcessing={isGenerating} />
-                 <span className="text-sm font-black hidden sm:block lg:block truncate max-w-[120px] uppercase tracking-tighter">{systemConfig.globalAppName}</span>
+                <FuturisticLogo size={28} isProcessing={isGenerating} />
+                <span className="text-sm font-black hidden sm:block lg:block truncate max-w-[120px] uppercase tracking-tighter">{systemConfig.globalAppName}</span>
               </div>
 
               {/* SELETOR DE MODELOS POSICIONADO À ESQUERDA LOGO APÓS A MARCA */}
               <div className="hidden sm:block shrink-0">
-                <ModelSelector 
-                  settings={settings} 
+                <ModelSelector
+                  settings={settings}
                   onUpdateSettings={(newPartial) => setSettings(prev => ({ ...prev, ...newPartial }))}
                   onOpenSettings={() => setIsSettingsOpen(true)}
+                  onOpenAIDashboard={() => setIsAIDashboardOpen(true)}
                 />
               </div>
             </div>
@@ -236,9 +241,9 @@ const App: React.FC = () => {
                     {currentAgent ? `Olá, eu sou o ${currentAgent.name}` : systemConfig.globalAppName}
                   </h1>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl px-4 mt-8">
-                     {PROFESSIONAL_STARTERS.map(starter => (
-                       <button key={starter.id} onClick={() => setInput(starter.prompt)} className="px-4 py-3 rounded-2xl bg-soft-card dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all text-left group shadow-sm"><span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{starter.label}</span><span className="text-xs text-gray-500 dark:text-gray-400 block line-clamp-1">{starter.prompt}</span></button>
-                     ))}
+                    {PROFESSIONAL_STARTERS.map(starter => (
+                      <button key={starter.id} onClick={() => setInput(starter.prompt)} className="px-4 py-3 rounded-2xl bg-soft-card dark:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 hover:bg-blue-50 dark:hover:bg-blue-500/5 transition-all text-left group shadow-sm"><span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{starter.label}</span><span className="text-xs text-gray-500 dark:text-gray-400 block line-clamp-1">{starter.prompt}</span></button>
+                    ))}
                   </div>
                 </div>
               ) : (
@@ -265,11 +270,18 @@ const App: React.FC = () => {
         {settings.isSplitViewEnabled && (
           <div className="w-1/2 h-full"><DocumentEditor content={editorContent} onChange={(c) => setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, editorContent: c } : s))} onClear={() => setSessions(prev => prev.map(s => s.id === currentSessionId ? { ...s, editorContent: "" } : s))} theme={settings.theme} /></div>
         )}
-        
+
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onSave={setSettings} masterPassword={masterPassword} onUpdateMasterPassword={setMasterPassword} systemConfig={systemConfig} onUpdateSystemConfig={handleUpdateSystemConfig} />
         <WelcomeSetupModal isOpen={isWelcomeModalOpen} onClose={() => setIsWelcomeModalOpen(false)} onOpenSettings={() => { setIsWelcomeModalOpen(false); setIsSettingsOpen(true); }} onSelectFreeMode={() => { setIsWelcomeModalOpen(false); }} adminWelcomeMessage={systemConfig.adminWelcomeMessage} appName={systemConfig.globalAppName} />
-        <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={(a) => { setAgents(prev => { const idx = prev.findIndex(item => item.id === a.id); if(idx !== -1) { const n = [...prev]; n[idx] = a; return n; } return [...prev, a]; }); }} agentToEdit={editingAgent} />
-        {isLocked && <MasterPasswordModal onUnlock={(p) => { const vaultData = localStorage.getItem('gemini-vault-v1'); if(!vaultData) return; const decrypted = SecurityService.decrypt(vaultData, p); if(decrypted) { setSettings(decrypted); setMasterPassword(p); setIsLocked(false); } else setUnlockError("Senha Incorreta"); }} error={unlockError} />}
+        <AgentsModal isOpen={isAgentModalOpen} onClose={() => setIsAgentModalOpen(false)} onSaveAgent={(a) => { setAgents(prev => { const idx = prev.findIndex(item => item.id === a.id); if (idx !== -1) { const n = [...prev]; n[idx] = a; return n; } return [...prev, a]; }); }} agentToEdit={editingAgent} />
+        {isAIDashboardOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-4xl max-h-[90vh] overflow-auto">
+              <ModelDashboard onClose={() => setIsAIDashboardOpen(false)} />
+            </div>
+          </div>
+        )}
+        {isLocked && <MasterPasswordModal onUnlock={(p) => { const vaultData = localStorage.getItem('gemini-vault-v1'); if (!vaultData) return; const decrypted = SecurityService.decrypt(vaultData, p); if (decrypted) { setSettings(decrypted); setMasterPassword(p); setIsLocked(false); } else setUnlockError("Senha Incorreta"); }} error={unlockError} />}
       </main>
     </div>
   );
